@@ -1,0 +1,38 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import Home from '../pages/Home.vue'
+import Login from '../pages/Login.vue'
+import CreateEvent from '../pages/CreateEvent.vue'
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    {
+      path: '/',
+      name: 'Home',
+      component: Home,
+    },
+    {
+      path: '/login',
+      name: 'Login',
+      component: Login,
+    },
+    {
+      path: '/create-event',
+      name: 'CreateEvent',
+      component: CreateEvent,
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+  ],
+})
+
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')
+  
+  if (to.meta.requiresAuth && !token) {
+    next('/login')
+  } else {
+    next()
+  }
+})
+
+export default router
