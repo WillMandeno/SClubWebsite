@@ -1,14 +1,15 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from database import Base
+from .database import Base
 
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
-    username = Column(String, unique=True, index=True)
+    # keep DB column name `username` for now; expose attribute `display_name`
+    display_name = Column('username', String, unique=True, index=True)
     hashed_password = Column(String)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)

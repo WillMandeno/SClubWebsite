@@ -78,8 +78,8 @@ const handleRegister = async () => {
     await auth.register(email.value, displayName.value, password.value)
     router.push('/')
   } catch (e) {
-    console.error('Login failed:', e)
-    error.value = 'Login failed. Check credentials.'
+    console.error('Register failed:', e)
+    error.value = 'Register failed. Check credentials.'
   }
 }
 

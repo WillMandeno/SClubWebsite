@@ -31,7 +31,6 @@ const router = useRouter()
 onMounted(() => {
   const token = localStorage.getItem('token')
   isAuthenticated.value = !!token
-  // TODO: Fetch user info to check if admin
 })
 
 const logout = () => {

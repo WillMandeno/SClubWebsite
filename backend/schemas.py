@@ -1,10 +1,11 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from typing import Optional
 
 class UserBase(BaseModel):
     email: EmailStr
-    username: str
+    # Accept `displayName` from frontend but use `display_name` internally
+    display_name: str = Field(..., alias='displayName')
 
 class UserCreate(UserBase):
     password: str
@@ -16,6 +17,7 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class EventBase(BaseModel):
     title: str
