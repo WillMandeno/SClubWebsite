@@ -45,12 +45,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { authService } from '../services/api'
+import { useAuthStore } from '@/stores/auth'
+import { storeToRefs } from 'pinia'
 
 const email = ref('')
 const password = ref('')
 const router = useRouter()
-const loading = ref(false)
+const auth = useAuthStore()
+const { loading } = storeToRefs(auth)
 const error = ref('')
 
 const rules = {
@@ -60,16 +62,12 @@ const rules = {
 
 const handleLogin = async () => {
   error.value = ''
-  loading.value = true
   try {
-    const response = await authService.login(email.value, password.value)
-    localStorage.setItem('token', response.data.access_token)
+    await auth.login(email.value, password.value)
     router.push('/')
   } catch (e) {
     console.error('Login failed:', e)
     error.value = 'Login failed. Check credentials.'
-  } finally {
-    loading.value = false
   }
 }
 

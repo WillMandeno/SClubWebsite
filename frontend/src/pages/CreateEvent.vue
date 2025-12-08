@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { eventService } from '../services/api'
+import { useEventsStore } from '@/stores/events'
 
 const title = ref('')
 const description = ref('')
@@ -23,10 +23,11 @@ const startTime = ref('')
 const endTime = ref('')
 const location = ref('')
 const router = useRouter()
+const events = useEventsStore()
 
 const handleCreateEvent = async () => {
   try {
-    await eventService.createEvent({
+    await events.createEvent({
       title: title.value,
       description: description.value,
       start_time: new Date(startTime.value).toISOString(),
