@@ -26,8 +26,8 @@ export const eventService = {
 export const authService = {
   login: (email: string, password: string) =>
     api.post('/auth/login', { email, password }),
-  register: (email: string, username: string, password: string) =>
-    api.post('/auth/register', { email, username, password }),
+  register: (email: string, displayName: string, password: string) =>
+    api.post('/auth/register', { email, displayName, password }),
   getMe: () => api.get('/auth/me'),
 }
 

@@ -3,9 +3,20 @@
     <v-row align="center" justify="center">
       <v-col cols="12" md="6" lg="4">
         <v-card class="pa-6">
-          <v-card-title align="center" class="pb-6">Login</v-card-title>
+          <v-card-title align="center" class="pb-6">Create Account</v-card-title>
           <v-card-text>
-            <v-form @submit.prevent="handleLogin">
+            <v-form @submit.prevent="handleRegister">
+
+              <v-text-field
+                v-model="displayName"
+                label="Display Name"
+                type="text"
+                :rules="[rules.required]"
+                outlined
+                dense
+                required
+              />
+              
               <v-text-field
                 v-model="email"
                 label="Email"
@@ -31,8 +42,8 @@
               </v-alert>
 
               <div class="mt-6">
-                <v-btn :loading="loading" color="primary" size="large" block type="submit">Login</v-btn>
-                <v-btn class="mt-3" color="secondary" size="large" block outlined @click="goRegister">Create account</v-btn>
+                 <v-btn :loading="loading" color="primary" size="large" block type="submit">Create account</v-btn>
+                 <v-btn class="mt-3" color="secondary" size="large" block outlined @click="goLogin">Back to login</v-btn>
               </div>
             </v-form>
           </v-card-text>
@@ -47,6 +58,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '../services/api'
 
+const displayName = ref('')
 const email = ref('')
 const password = ref('')
 const router = useRouter()
@@ -58,11 +70,11 @@ const rules = {
   email: (v: string) => /\S+@\S+\.\S+/.test(v) || 'Invalid email',
 }
 
-const handleLogin = async () => {
+const handleRegister = async () => {
   error.value = ''
   loading.value = true
   try {
-    const response = await authService.login(email.value, password.value)
+    const response = await authService.register(email.value, displayName.value, password.value)
     localStorage.setItem('token', response.data.access_token)
     router.push('/')
   } catch (e) {
@@ -73,8 +85,8 @@ const handleLogin = async () => {
   }
 }
 
-const goRegister = () => {
-  router.push('/register')
+const goLogin = () => {
+  router.push('/login')
 }
 </script>
 

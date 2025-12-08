@@ -1,7 +1,7 @@
 export interface User {
   id: number
   email: string
-  username: string
+  displayName: string
   is_admin: boolean
   created_at: string
 }

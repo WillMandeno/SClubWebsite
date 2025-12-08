@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../pages/Home.vue'
-import Login from '../pages/Login.vue'
-import CreateEvent from '../pages/CreateEvent.vue'
+import Home from './pages/Home.vue'
+import Login from './pages/Login.vue'
+import Register from './pages/Register.vue'
+import CreateEvent from './pages/CreateEvent.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -15,6 +16,11 @@ const router = createRouter({
       path: '/login',
       name: 'Login',
       component: Login,
+    },
+    {
+      path: '/register',
+      name: 'Register',
+      component: Register,
     },
     {
       path: '/create-event',
