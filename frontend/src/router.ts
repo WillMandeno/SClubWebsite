@@ -3,6 +3,7 @@ import Home from './pages/Home.vue'
 import Login from './pages/Login.vue'
 import Register from './pages/Register.vue'
 import CreateEvent from './pages/CreateEvent.vue'
+import Events from './pages/Events.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -27,6 +28,11 @@ const router = createRouter({
       name: 'CreateEvent',
       component: CreateEvent,
       meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/events',
+      name: 'Events',
+      component: Events,
     },
   ],
 })

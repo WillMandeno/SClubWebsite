@@ -8,8 +8,9 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
-    # keep DB column name `username` for now; expose attribute `display_name`
-    display_name = Column('username', String, unique=True, index=True)
+    # Use `display_name` as the column name in the database to match the
+    # attribute used throughout the codebase and the frontend (displayName).
+    display_name = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)

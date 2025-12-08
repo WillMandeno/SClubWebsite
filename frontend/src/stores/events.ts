@@ -29,10 +29,15 @@ export const useEventsStore = defineStore('events', () => {
   }
 
   async function createEvent(payload: any) {
-    const res = await eventService.createEvent(payload)
-    // refresh list after create
-    await fetchEvents()
-    return res
+    loading.value = true
+    try {
+      const res = await eventService.createEvent(payload)
+      await fetchEvents()
+      return res
+    } finally {
+        loading.value = false
+    }
+
   }
 
   async function updateEvent(id: number | string, payload: any) {

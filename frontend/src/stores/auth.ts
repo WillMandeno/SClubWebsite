@@ -14,6 +14,16 @@ export const useAuthStore = defineStore('auth', () => {
 	const user = ref<User | null>(null)
 	const loading = ref(false)
 
+	function normalizeUser(u: any): User | null {
+		if (!u) return null
+		return {
+			id: u.id,
+			email: u.email,
+			display_name: u.display_name ?? u.displayName ?? u.username ?? undefined,
+			is_admin: u.is_admin ?? u.isAdmin ?? false,
+		}
+	}
+
 	function setToken(t: string | null) {
 		token.value = t
 		if (t) localStorage.setItem('token', t)
@@ -24,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
 		if (!token.value) return null
 		try {
 			const res = await authService.getMe()
-			user.value = res.data
+			user.value = normalizeUser(res.data)
 			return user.value
 		} catch (e) {
 			// token invalid or request failed -> clear auth

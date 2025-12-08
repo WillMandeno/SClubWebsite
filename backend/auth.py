@@ -73,7 +73,10 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return db_user
+    # Return the Pydantic schema dump using aliases (camelCase) so the API
+    # consistently returns keys like `displayName` for the frontend.
+    user_schema = UserSchema.model_validate(db_user)
+    return user_schema.model_dump(by_alias=True)
 
 
 @router.post("/login", response_model=Token)
@@ -113,4 +116,5 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 @router.get("/me", response_model=UserSchema)
 def read_me(current_user: User = Depends(get_current_user)):
-    return current_user
+    user_schema = UserSchema.model_validate(current_user)
+    return user_schema.model_dump(by_alias=True)

@@ -1,0 +1,69 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import List
+from .database import SessionLocal
+from .models import Event
+from .schemas import EventCreate, Event as EventSchema, EventWithCreator
+from .auth import get_current_user
+
+router = APIRouter(prefix="/events", tags=["events"])
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@router.get("/", response_model=List[EventSchema])
+def list_events(db: Session = Depends(get_db)):
+    events = db.query(Event).order_by(Event.start_time).all()
+    # Pydantic will convert SQLAlchemy objects via from_attributes
+    return [EventSchema.model_validate(e).model_dump() for e in events]
+
+
+@router.post("/", response_model=EventSchema, status_code=status.HTTP_201_CREATED)
+def create_event(event: EventCreate, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    ev = Event(
+        title=event.title,
+        description=event.description,
+        start_time=event.start_time,
+        end_time=event.end_time,
+        location=event.location,
+        created_by=current_user.id,
+    )
+    db.add(ev)
+    db.commit()
+    db.refresh(ev)
+    return EventSchema.model_validate(ev).model_dump()
+
+
+@router.put("/{event_id}", response_model=EventSchema)
+def update_event(event_id: int, payload: EventCreate, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    ev = db.query(Event).filter(Event.id == event_id).first()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if ev.created_by != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    ev.title = payload.title
+    ev.description = payload.description
+    ev.start_time = payload.start_time
+    ev.end_time = payload.end_time
+    ev.location = payload.location
+    db.commit()
+    db.refresh(ev)
+    return EventSchema.model_validate(ev).model_dump()
+
+
+@router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_event(event_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    ev = db.query(Event).filter(Event.id == event_id).first()
+    if not ev:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if ev.created_by != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not allowed")
+    db.delete(ev)
+    db.commit()
+    return {}

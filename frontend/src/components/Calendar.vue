@@ -4,7 +4,7 @@
       <v-btn icon @click="prevMonth" aria-label="Previous month">
         <v-icon>mdi-chevron-left</v-icon>
       </v-btn>
-      <div class="text-h6">{{ monthLabel }}</div>
+      <div class="sjc-title">{{ monthLabel }}</div>
       <v-btn icon @click="nextMonth" aria-label="Next month">
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>

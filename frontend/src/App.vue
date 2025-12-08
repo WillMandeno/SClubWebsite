@@ -1,15 +1,43 @@
 <template>
   <v-app>
     <v-app-bar color="primary" dark>
-      <v-toolbar-title class="d-flex align-center">
+      <v-app-bar-nav-icon @click="drawer = !drawer" />
+
+      <v-toolbar-title class="d-flex align-center justify-center centered-title">
         <v-icon class="mr-3 mb-1" @click="router.push('/')">
           <v-img :src="EagleLogoGreenBackground" alt="SClub Logo" contain />
         </v-icon>
         <span class="toolbar-title-text" @click="router.push('/')">SClub Calendar</span>
       </v-toolbar-title>
-      <v-btn class="mx-2" v-if="isAuthenticated" text @click="logout">Logout</v-btn>
-      <v-btn class="mx-2" v-else text to="/login">Login</v-btn>
+      <v-btn class="mx-2" v-if="!isAuthenticated" text to="/login">Login</v-btn>
     </v-app-bar>
+
+      <v-navigation-drawer v-model="drawer" app temporary>
+        <v-list>
+          <v-list-item two-line v-if="isAuthenticated">
+            <v-list-item-content>
+              <div class="d-flex align-center">
+                <v-icon class="mr-2">mdi-account-circle</v-icon>
+                <v-list-item-title class="user-display-name">{{ userDisplayName }}</v-list-item-title>
+              </div>
+            </v-list-item-content>
+          </v-list-item>
+
+          <v-divider v-if="isAuthenticated"/>
+
+          <v-list-item link @click="goTo('/events')">
+            <v-list-item-title>Events</v-list-item-title>
+          </v-list-item>
+
+          <v-list-item link @click="goToCreate">
+            <v-list-item-title>Create Event</v-list-item-title>
+          </v-list-item>
+
+          <v-list-item link v-if="isAuthenticated" @click="logoutAndClose">
+            <v-list-item-title>Logout</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-navigation-drawer>
 
     <v-main>
       <v-container class="pa-4">
@@ -20,24 +48,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import EagleLogoGreenBackground from '@/assets/EagleLogoGreenBackground.png'
 
-const isAuthenticated = ref(false)
-const isAdmin = ref(false)
 const router = useRouter()
+const auth = useAuthStore()
+
+const drawer = ref(false)
 
 onMounted(() => {
-  const token = localStorage.getItem('token')
-  isAuthenticated.value = !!token
+  auth.init()
 })
 
+const isAuthenticated = computed(() => !!auth.token)
+const userDisplayName = computed(() => auth.user?.display_name ?? auth.user?.email ?? '')
+const isAdmin = computed(() => !!auth.user?.is_admin)
+
 const logout = () => {
-  localStorage.removeItem('token')
-  isAuthenticated.value = false
-  isAdmin.value = false
+  auth.logout()
   router.push('/')
+}
+
+function goTo(path: string) {
+  drawer.value = false
+  router.push(path)
+}
+
+function logoutAndClose() {
+  drawer.value = false
+  logout()
+}
+
+function goToCreate() {
+  drawer.value = false
+  if (auth.token) router.push('/create-event')
+  else router.push('/login')
 }
 </script>
 
@@ -53,6 +100,28 @@ const logout = () => {
 </style>
 
 <style>
+/* Ensure app bar can contain an absolutely-centered title */
+.v-app-bar {
+  position: relative;
+}
+
+.centered-title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* true centering */
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: none; /* prevents blocking clicks on nav items under it */
+}
+
+.centered-title > * {
+  pointer-events: auto; /* restore clickability for children */
+}
+.user-display-name {
+  text-transform: none;
+}
 .v-toolbar-title, .v-card-title, .text-h5 {
   font-family: 'Permanent Marker', 'Rubik', Inter, Roboto, sans-serif;
   text-transform: none !important;
