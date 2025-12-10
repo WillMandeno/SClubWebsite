@@ -34,6 +34,7 @@ class Event(EventBase):
     created_by: int
     created_at: datetime
     updated_at: datetime
+    creator_name: Optional[str] = None
 
     class Config:
         from_attributes = True

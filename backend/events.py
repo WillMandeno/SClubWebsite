@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from .database import SessionLocal
-from .models import Event
+from .models import Event, User
 from .schemas import EventCreate, Event as EventSchema, EventWithCreator
 from .auth import get_current_user
 
@@ -19,9 +19,13 @@ def get_db():
 
 @router.get("/", response_model=List[EventSchema])
 def list_events(db: Session = Depends(get_db)):
-    events = db.query(Event).order_by(Event.start_time).all()
-    # Pydantic will convert SQLAlchemy objects via from_attributes
-    return [EventSchema.model_validate(e).model_dump() for e in events]
+    events = db.query(Event).join(User, Event.created_by == User.id).add_columns(User.display_name.label('creator_name')).order_by(Event.start_time).all()
+    result = []
+    for e in events:
+        event_dict = e[0].__dict__.copy()
+        event_dict['creator_name'] = e[1]
+        result.append(EventSchema.model_validate(event_dict).model_dump())
+    return result
 
 
 @router.post("/", response_model=EventSchema, status_code=status.HTTP_201_CREATED)

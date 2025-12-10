@@ -25,6 +25,10 @@
 
           <v-divider v-if="isAuthenticated"/>
 
+          <v-list-item link @click="goTo('/')">
+            <v-list-item-title> <b>Home</b> </v-list-item-title>
+          </v-list-item>
+
           <v-list-item link @click="goTo('/events')">
             <v-list-item-title>Events</v-list-item-title>
           </v-list-item>

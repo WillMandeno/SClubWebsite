@@ -4,6 +4,7 @@ import Login from './pages/Login.vue'
 import Register from './pages/Register.vue'
 import CreateEvent from './pages/CreateEvent.vue'
 import Events from './pages/Events.vue'
+import EditEvent from './pages/EditEvent.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -33,7 +34,7 @@ const router = createRouter({
       path: '/events',
       name: 'Events',
       component: Events,
-    },
+    }
   ],
 })
 

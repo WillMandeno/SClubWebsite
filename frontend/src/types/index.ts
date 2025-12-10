@@ -13,7 +13,7 @@ export interface Event {
   start_time: string
   end_time: string
   location?: string
-  created_by: number
+  creator_name: string
   created_at: string
   updated_at: string
 }

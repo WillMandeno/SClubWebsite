@@ -61,6 +61,9 @@ const rules = {
 }
 
 const handleLogin = async () => {
+  if (!email.value || !password.value) {
+    return
+  }
   error.value = ''
   try {
     await auth.login(email.value, password.value)

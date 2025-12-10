@@ -73,13 +73,19 @@ const rules = {
 }
 
 const handleRegister = async () => {
+  if (!email.value || !password.value || !displayName.value) {
+    return
+  }
   error.value = ''
   try {
     await auth.register(email.value, displayName.value, password.value)
+    await auth.login(email.value, password.value)
     router.push('/')
-  } catch (e) {
+  } catch (e: any) {
     console.error('Register failed:', e)
-    error.value = 'Register failed. Check credentials.'
+    // Extract the actual error message from the response
+    const errorMessage = e.response?.data?.message || e.response?.data?.detail || e.response?.data?.error || e.message || 'Register failed. Check credentials.'
+    error.value = errorMessage
   }
 }
 

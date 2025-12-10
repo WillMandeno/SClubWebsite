@@ -1,19 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { eventService } from '@/services/api'
-
-type EventItem = {
-  id: number | string
-  title: string
-  description?: string
-  start_time?: string
-  end_time?: string
-  date?: string
-  location?: string | null
-}
+import type { Event } from '@/types'
 
 export const useEventsStore = defineStore('events', () => {
-  const events = ref<EventItem[]>([])
+  const events = ref<Event[]>([])
   const loading = ref(false)
 
   async function fetchEvents() {

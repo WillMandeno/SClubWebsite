@@ -1,216 +1,150 @@
 <template>
-  <div class="calendar">
-    <v-row align="center" justify="space-between" class="mb-4">
-      <v-btn icon @click="prevMonth" aria-label="Previous month">
+  <div>
+    <v-sheet class="d-flex" tile>
+      <v-btn
+        class="ma-2"
+        variant="text"
+        icon
+        @click="($refs.calendar as any)?.prev()"
+      >
         <v-icon>mdi-chevron-left</v-icon>
       </v-btn>
+      <v-spacer></v-spacer>
       <div class="sjc-title">{{ monthLabel }}</div>
-      <v-btn icon @click="nextMonth" aria-label="Next month">
+      <v-spacer></v-spacer>
+      <v-btn
+        class="ma-2"
+        variant="text"
+        icon
+        @click="($refs.calendar as any)?.next()"
+      >
         <v-icon>mdi-chevron-right</v-icon>
       </v-btn>
-    </v-row>
-
-    <div class="weekday-headers">
-      <div class="weekday" v-for="d in weekdayNames" :key="d">{{ d }}</div>
-    </div>
-
-    <div class="days-grid">
-      <div
-        v-for="day in days"
-        :key="day.dateKey"
-        class="day-cell"
-        :class="{ 'not-in-month': !day.inMonth, today: day.isToday }"
-        @click="onDayClick(day)"
+    </v-sheet>
+    <v-sheet height="600">
+      <v-calendar
+        ref="calendar"
+        v-model="value"
+        :events="calendarEvents"
+        :type="type"
+        @click:day="(_, scope) => onDayClickInternal(scope.date)"
       >
-        <v-card outlined class="day-card">
-          <div class="day-header">
-            <div class="day-number">{{ day.date.getDate() }}</div>
+        <template #event="{ event }">
+          <div class="event-chip" :title="event.name" @click.stop="onEventClickInternal(event)">
+            {{ event.name }}
           </div>
-          <div class="events-list">
-            <div
-              v-for="ev in day.events"
-              :key="ev.id"
-              class="event-pill"
-              @click.stop="() => $emit('event-click', ev)"
-              :title="ev.title"
-            >
-              {{ ev.title }}
-            </div>
+        </template>
+      </v-calendar>
+    </v-sheet>
+
+    <v-dialog v-model="showDayDialog" max-width="640">
+      <v-card v-if="selectedDay">
+        <v-card-title>{{ formatDate(selectedDay.date) }}</v-card-title>
+        <v-card-text>
+          <div v-if="selectedDay.events.length === 0">No events on this day.</div>
+          <div v-else>
+            <v-list dense>
+              <v-list-item v-for="ev in selectedDay.events" :key="ev.id" @click="onEventClick(ev)">
+                <v-list-item-content>
+                  <v-list-item-title>{{ ev.title }}</v-list-item-title>
+                  <v-list-item-subtitle v-if="ev.description">{{ ev.description }}</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
           </div>
-        </v-card>
-      </div>
-    </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="showDayDialog = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <EventDialog :event="selectedEvent" v-model="showEventDialog" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, defineEmits, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import EventDialog from './EventDialog.vue';
+import type { Event } from '@/types';
 
-type CalendarEvent = { id: string | number; title: string; date: string }
+type VuetifyEvent = { name: string; start: string | Date; end?: string | Date; color?: string; id?: string | number; raw?: any }
 
 const props = defineProps<{
-  events?: CalendarEvent[]
+  events?: Event[]
   year?: number
-  month?: number // 0-indexed
+  month?: number
 }>()
 
-const emit = defineEmits<{
-  (e: 'event-click', ev: CalendarEvent): void
-  (e: 'day-click', date: string): void
-}>()
+const type = ref<'month'>('month')
+const value = ref('')
+const selectedDay = ref<{ date: string; events: Event[] } | null>(null)
+const showDayDialog = ref(false)
+const selectedEvent = ref<Event | undefined>(undefined)
+const showEventDialog = ref(false)
 
-const today = new Date()
-const activeYear = ref(props.year ?? today.getFullYear())
-const activeMonth = ref(props.month ?? today.getMonth())
+watch(() => props.year, (v) => {
+  if (v !== undefined) value.value = `${v}-${String((props.month ?? new Date().getMonth() + 1)).padStart(2, '0')}-01`
+})
 
-watch(() => props.year, (v) => { if (v !== undefined) activeYear.value = v })
-watch(() => props.month, (v) => { if (v !== undefined) activeMonth.value = v })
-
-const weekdayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-
-function startOfMonth(year: number, month: number) {
-  return new Date(year, month, 1)
-}
-
-function endOfMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0)
-}
-
-function padZero(n: number) { return n < 10 ? `0${n}` : `${n}` }
-
-function dateKey(d: Date) {
-  return `${d.getFullYear()}-${padZero(d.getMonth()+1)}-${padZero(d.getDate())}`
-}
-
-function buildDays(year: number, month: number) {
-  const start = startOfMonth(year, month)
-  const end = endOfMonth(year, month)
-  const startWeekday = start.getDay()
-  const totalDays = end.getDate()
-
-  const days: Array<any> = []
-
-  // previous month's tail
-  for (let i = 0; i < startWeekday; i++) {
-    const d = new Date(year, month, 1 - (startWeekday - i))
-    days.push({ date: d, inMonth: false, dateKey: dateKey(d), events: [], isToday: isSameDay(d, today) })
-  }
-
-  // current month
-  for (let day = 1; day <= totalDays; day++) {
-    const d = new Date(year, month, day)
-    days.push({ date: d, inMonth: true, dateKey: dateKey(d), events: [], isToday: isSameDay(d, today) })
-  }
-
-  // next month's head to fill to full weeks (7 columns)
-  while (days.length % 7 !== 0) {
-    const last = days[days.length - 1].date
-    const d = new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1)
-    days.push({ date: d, inMonth: false, dateKey: dateKey(d), events: [], isToday: isSameDay(d, today) })
-  }
-
-  // attach events
-  const evMap = new Map<string, CalendarEvent[]>()
-  ;(props.events ?? []).forEach((ev) => {
-    evMap.set(ev.date, (evMap.get(ev.date) ?? []).concat(ev))
-  })
-
-  for (const d of days) {
-    d.events = evMap.get(d.dateKey) ?? []
-  }
-
-  return days
-}
-
-function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
-}
-
-const days = computed(() => buildDays(activeYear.value, activeMonth.value))
+const calendarEvents = computed<VuetifyEvent[]>(() => (props.events ?? []).map(ev => ({
+  name: ev.title,
+  start: new Date(ev.start_time),
+  end: new Date(ev.end_time),
+  id: ev.id,
+  raw: ev,
+  color: 'secondary',
+})))
 
 const monthLabel = computed(() => {
-  const d = new Date(activeYear.value, activeMonth.value, 1)
+  const d = new Date(value.value || new Date())
   return d.toLocaleString(undefined, { month: 'long', year: 'numeric' })
 })
 
-function prevMonth() {
-  if (activeMonth.value === 0) { activeMonth.value = 11; activeYear.value -= 1 }
-  else activeMonth.value -= 1
+const dateFormatter = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+
+function formatDate(dateStr: string) {
+  return dateFormatter.format(new Date(dateStr))
 }
 
-function nextMonth() {
-  if (activeMonth.value === 11) { activeMonth.value = 0; activeYear.value += 1 }
-  else activeMonth.value += 1
+function onEventClickInternal(event: any) {
+  selectedEvent.value = event.raw
+  showEventDialog.value = true
 }
 
-function onDayClick(day: any) {
-  emit('day-click', day.dateKey)
+function onDayClickInternal(payload: any) {
+  const date = payload?.date ?? payload
+  const isoDate = (typeof date === 'string') ? date.split('T')[0] : String(date)
+
+  const dayStart = new Date(isoDate + 'T00:00:00Z')
+  const dayEnd = new Date(isoDate + 'T23:59:59Z')
+
+  const eventsForDay = (props.events ?? []).filter(e => { 
+    const evStart = new Date(e.start_time)
+    const evEnd = new Date(e.end_time)
+    return (evStart <= dayEnd) && (evEnd >= dayStart)
+  })
+  
+  selectedDay.value = { date: isoDate, events: eventsForDay }
+  showDayDialog.value = true
 }
 
-// no extra refs needed; `weekdayNames` is used in template
+function onEventClick(ev: any) {
+  selectedEvent.value = ev
+  showEventDialog.value = true
+}
 </script>
 
 <style scoped>
-.calendar {
-  width: 100%;
-}
-.weekday-headers {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.weekday {
-  text-align: center;
-  font-weight: 600;
-  color: rgba(0,0,0,0.7);
-}
-.days-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 12px;
-}
-.day-cell {
-  min-height: 140px;
-}
-.day-card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-  padding: 8px;
-}
-.day-header {
-  display: flex;
-  justify-content: flex-end;
-}
-.day-number {
-  font-size: 0.95rem;
-  color: rgba(0,0,0,0.8);
-}
-.not-in-month .day-card {
-  opacity: 0.45;
-  background: transparent !important;
-}
-.today .day-card {
-  border: 1px solid rgba(0,0,0,0.12);
-  background-color: rgba(14,119,3,0.04);
-}
-.events-list {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.event-pill {
-  background: rgba(14,119,3,0.08);
-  color: rgba(0,0,0,0.85);
+.event-chip {
+  background: rgba(255,170,0,0.12);
+  padding: 4px 8px;
   border-radius: 6px;
-  padding: 6px 8px;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
 }
 </style>
 
