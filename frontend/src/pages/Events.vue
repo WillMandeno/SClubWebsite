@@ -36,52 +36,11 @@
       <v-card v-if="selectedEvent">
         <v-card-title>Edit Event</v-card-title>
         <v-card-text>
-          <v-text-field v-model="selectedEvent.title" label="Title" required></v-text-field>
-          <v-textarea v-model="selectedEvent.description" label="Description"></v-textarea>
-          <v-text-field v-model="selectedEvent.location" label="Location"></v-text-field>
-          <!-- Start date & time -->
-          <v-row dense>
-            <v-col cols="12" sm="6">
-              <v-menu v-model="startDateMenu" :close-on-content-click="false" transition="scale-transition" offset-y>
-                <template #activator="{ props }">
-                  <v-text-field v-bind="props" v-model="startDateDisplay" label="Start Date" readonly required variant="outlined" />
-                </template>
-                <v-date-picker v-model="startDate" @update:model-value="startDateMenu = false" />
-              </v-menu>
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-menu v-model="startTimeMenu" :close-on-content-click="false" transition="scale-transition" offset-y>
-                <template #activator="{ props }">
-                  <v-text-field v-bind="props" v-model="startTime" label="Start Time" readonly required variant="outlined" />
-                </template>
-                <v-time-picker v-model="startTime" />
-              </v-menu>
-            </v-col>
-          </v-row>
-          <!-- End date & time -->
-          <v-row dense>
-            <v-col cols="12" sm="6">
-              <v-menu v-model="endDateMenu" :close-on-content-click="false" transition="scale-transition" offset-y>
-                <template #activator="{ props }">
-                  <v-text-field v-bind="props" v-model="endDateDisplay" label="End Date" readonly required variant="outlined" />
-                </template>
-                <v-date-picker v-model="endDate" @update:model-value="endDateMenu = false" />
-              </v-menu>
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-menu v-model="endTimeMenu" :close-on-content-click="false" transition="scale-transition" offset-y>
-                <template #activator="{ props }">
-                  <v-text-field v-bind="props" v-model="endTime" label="End Time" readonly required variant="outlined" />
-                </template>
-                <v-time-picker v-model="endTime" />
-              </v-menu>
-            </v-col>
-          </v-row>
+          <EventForm mode="edit" :initial-event="selectedEvent" @submit="handleSave" />
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn @click="showEditDialog = false">Cancel</v-btn>
-          <v-btn color="primary" @click="saveEvent">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -89,11 +48,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { eventService } from '@/services/api'
 import EventDialog from '@/components/EventDialog.vue'
+import EventForm from '@/components/EventForm.vue'
 import { Event } from '@/types'
 
 const events = ref<Event[]>([])
@@ -102,67 +62,6 @@ const auth = useAuthStore()
 const selectedEvent = ref<Event | null>(null)
 const showViewDialog = ref(false)
 const showEditDialog = ref(false)
-const startDateInternal = ref('')
-const startTime = ref('')
-const endDateInternal = ref('')
-const endTime = ref('')
-const startDateMenu = ref(false)
-const startTimeMenu = ref(false)
-const endDateMenu = ref(false)
-const endTimeMenu = ref(false)
-
-const errorMessage = computed(() => {
-  if (!startDateInternal.value || !startTime.value || !endDateInternal.value || !endTime.value) return '';
-
-  const start = new Date(`${startDateInternal.value}T${startTime.value}:00`);
-  const end = new Date(`${endDateInternal.value}T${endTime.value}:00`);
-
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 'Invalid date or time.';
-  return start >= end ? 'End time must be after start time.' : '';
-})
-
-// Clear error message when values are corrected
-watch([startDateInternal, startTime, endDateInternal, endTime], () => {
-  if (errorMessage.value) {
-    const start = new Date(`${startDateInternal.value}T${startTime.value}:00`);
-    const end = new Date(`${endDateInternal.value}T${endTime.value}:00`);
-    if (start < end) {
-      errorMessage.value = '';
-    }
-  }
-});
-
-const startDate = computed({
-  get: () => startDateInternal.value,
-  set: (value) => {
-    startDateInternal.value = value instanceof Date ? value.toLocaleDateString('sv-SE') : value
-  }
-})
-
-const endDate = computed({
-  get: () => endDateInternal.value,
-  set: (value) => {
-    endDateInternal.value = value instanceof Date ? value.toLocaleDateString('sv-SE') : value
-  }
-})
-
-const startDateDisplay = computed({
-  get: () => {
-    if (!startDateInternal.value) return ''
-    const date = new Date(startDateInternal.value + 'T00:00:00')
-    return date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
-  },
-  set: () => {}
-})
-
-const endDateDisplay = computed({
-  get: () => {
-    if (!endDateInternal.value) return ''
-    const date = new Date(endDateInternal.value + 'T00:00:00')
-    return date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
-  },
-  set: () => {}
-})
 
 const isAuthenticated = computed(() => !!auth.token)
 
@@ -204,13 +103,6 @@ function openViewDialog(event: Event) {
 
 function openEditDialog(event: Event) {
   selectedEvent.value = event
-  // Parse start_time and end_time into local date and time
-  const start = new Date(event.start_time)
-  startDateInternal.value = start.toLocaleDateString('sv-SE') // YYYY-MM-DD
-  startTime.value = start.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' }) // HH:MM
-  const end = new Date(event.end_time)
-  endDateInternal.value = end.toLocaleDateString('sv-SE')
-  endTime.value = end.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' })
   showEditDialog.value = true
 }
 
@@ -234,23 +126,11 @@ function goToCreate() {
   router.push('/create-event')
 }
 
-async function saveEvent() {
-  if (!selectedEvent.value) return;
-  if (errorMessage.value) {
-    alert(errorMessage.value)
-    return
-  }
-
-  // Combine date and time into ISO strings
-  const startISO = new Date(`${startDateInternal.value}T${startTime.value}:00`).toISOString()
-  const endISO = new Date(`${endDateInternal.value}T${endTime.value}:00`).toISOString()
-
-  selectedEvent.value.start_time = startISO
-  selectedEvent.value.end_time = endISO
-
+async function handleSave(data: { title: string; description: string; start_time: string; end_time: string; location: string | null }) {
+  if (!selectedEvent.value) return
   try {
-    await eventService.updateEvent(selectedEvent.value.id, selectedEvent.value)
-    await fetchEvents()  // Refresh the list
+    await eventService.updateEvent(selectedEvent.value.id, data)
+    await fetchEvents()
     showEditDialog.value = false
   } catch (e) {
     console.error('Failed to update event', e)
