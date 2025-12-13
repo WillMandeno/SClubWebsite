@@ -117,14 +117,17 @@ function onDayClickInternal(payload: any) {
   const isoDate = (typeof date === 'string') ? date.split('T')[0] : String(date)
 
   const dayStart = new Date(isoDate + 'T00:00:00Z')
-  const dayEnd = new Date(isoDate + 'T23:59:59Z')
+  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000) // End of day: start of next day
 
   const eventsForDay = (props.events ?? []).filter(e => { 
     const evStart = new Date(e.start_time)
     const evEnd = new Date(e.end_time)
-    return (evStart <= dayEnd) && (evEnd >= dayStart)
+    const overlaps = (evStart <= dayEnd) && (evEnd >= dayStart)
+    console.log(`Event ${e.title}: start=${e.start_time}, end=${e.end_time}, dayStart=${dayStart.toISOString()}, dayEnd=${dayEnd.toISOString()}, overlaps=${overlaps}`)
+    return overlaps
   })
   
+  console.log(`Day ${isoDate}: found ${eventsForDay.length} events`)
   selectedDay.value = { date: isoDate, events: eventsForDay }
   showDayDialog.value = true
 }

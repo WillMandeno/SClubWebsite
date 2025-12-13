@@ -19,11 +19,11 @@
             />
 
             <!-- Start date & time -->
-            <v-row>
+            <v-row dense>
               <v-col cols="12" sm="6">
                 <v-menu v-model="startDateMenu" :close-on-content-click="false" transition="scale-transition" offset-y>
                   <template #activator="{ props }">
-                    <v-text-field v-bind="props" v-model="startDate" label="Start Date" readonly required />
+                    <v-text-field v-bind="props" v-model="startDateDisplay" label="Start Date" readonly required variant="outlined" />
                   </template>
                   <v-date-picker v-model="startDate" @input="startDateMenu = false" />
                 </v-menu>
@@ -31,7 +31,7 @@
               <v-col cols="12" sm="6">
                 <v-menu v-model="startTimeMenu" :close-on-content-click="false" transition="scale-transition" offset-y>
                   <template #activator="{ props }">
-                    <v-text-field v-bind="props" v-model="startTime" label="Start Time" readonly required />
+                    <v-text-field v-bind="props" v-model="startTime" label="Start Time" readonly required variant="outlined" />
                   </template>
                   <v-time-picker v-model="startTime" @change="startTimeMenu = false" />
                 </v-menu>
@@ -39,11 +39,11 @@
             </v-row>
 
             <!-- End date & time -->
-            <v-row>
+            <v-row dense>
               <v-col cols="12" sm="6">
                 <v-menu v-model="endDateMenu" :close-on-content-click="false" transition="scale-transition" offset-y>
                   <template #activator="{ props }">
-                    <v-text-field v-bind="props" v-model="endDate" label="End Date" readonly required />
+                    <v-text-field v-bind="props" v-model="endDateDisplay" label="End Date" readonly required variant="outlined" />
                   </template>
                   <v-date-picker v-model="endDate" @input="endDateMenu = false" />
                 </v-menu>
@@ -51,7 +51,7 @@
               <v-col cols="12" sm="6">
                 <v-menu v-model="endTimeMenu" :close-on-content-click="false" transition="scale-transition" offset-y>
                   <template #activator="{ props }">
-                    <v-text-field v-bind="props" v-model="endTime" label="End Time" readonly required />
+                    <v-text-field v-bind="props" v-model="endTime" label="End Time" readonly required variant="outlined" />
                   </template>
                   <v-time-picker v-model="endTime" @change="endTimeMenu = false" />
                 </v-menu>
@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEventsStore } from '@/stores/events'
 import { storeToRefs } from 'pinia'
@@ -94,10 +94,53 @@ const router = useRouter()
 const events = useEventsStore()
 const { loading } = storeToRefs(events)
 
+// Reactive error message state
+const errorMessage = ref('')
+
+// Update error message whenever dates/times change
+watch([startDate, startTime, endDate, endTime], () => {
+  if (!startDate.value || !startTime.value || !endDate.value || !endTime.value) {
+    errorMessage.value = ''
+    return
+  }
+
+  const start = new Date(`${startDate.value}T${startTime.value}:00`)
+  const end = new Date(`${endDate.value}T${endTime.value}:00`)
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    errorMessage.value = 'Invalid date or time.'
+    return
+  }
+
+  errorMessage.value = start >= end ? 'End time must be after start time.' : ''
+})
+
+const startDateDisplay = computed({
+  get: () => {
+    if (!startDate.value) return ''
+    const date = startDate.value instanceof Date ? startDate.value : new Date(startDate.value + 'T00:00:00')
+    return date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+  },
+  set: () => {}
+})
+
+const endDateDisplay = computed({
+  get: () => {
+    if (!endDate.value) return ''
+    const date = endDate.value instanceof Date ? endDate.value : new Date(endDate.value + 'T00:00:00')
+    return date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+  },
+  set: () => {}
+})
+
 // Using Vuetify default bindings for pickers — no custom display helpers required
 
 const handleCreateEvent = async () => {
   try {
+    if (errorMessage.value) {
+      alert(errorMessage.value)
+      return
+    }
     // basic validation
     const rawStart = startDate.value
     const rawEnd = endDate.value

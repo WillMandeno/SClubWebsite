@@ -15,6 +15,19 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Handle 401 responses
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      // Optionally redirect to login
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
 export const eventService = {
   getEvents: () => api.get('/events'),
   getEvent: (id: number) => api.get(`/events/${id}`),
