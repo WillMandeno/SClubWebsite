@@ -14,10 +14,10 @@
               </v-col>
             </v-row>
             <div class="event-action">
-              <v-btn v-if="auth.user && auth.user.id === event.created_by" icon size="small" @click.stop="openEditDialog(event)" title="Edit">
+              <v-btn v-if="auth.user && (auth.user.id === event.created_by || auth.user.is_admin)" icon size="small" @click.stop="openEditDialog(event)" title="Edit">
                 <v-icon>mdi-pencil</v-icon>
               </v-btn>
-              <v-btn v-if="auth.user && auth.user.id === event.created_by" icon size ="small" @click.stop="deleteEvent(event)" title="Delete">
+              <v-btn v-if="auth.user && (auth.user.id === event.created_by || auth.user.is_admin)" icon size ="small" @click.stop="openDeleteDialog(event)" title="Delete">
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
             </div>
@@ -44,6 +44,21 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog v-model="showDeleteDialog" max-width="500px">
+      <v-card>
+        <v-card-title>Delete event</v-card-title>
+        <v-card-text>
+          Are you sure you? This action cannot be undone.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="cancelDelete">Cancel</v-btn>
+          <v-btn color="error" @click="confirmDelete">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -62,6 +77,8 @@ const auth = useAuthStore()
 const selectedEvent = ref<Event | null>(null)
 const showViewDialog = ref(false)
 const showEditDialog = ref(false)
+const showDeleteDialog = ref(false)
+const eventToDelete = ref<Event | null>(null)
 
 const isAuthenticated = computed(() => !!auth.token)
 
@@ -106,17 +123,26 @@ function openEditDialog(event: Event) {
   showEditDialog.value = true
 }
 
-async function deleteEvent(event: Event) {
-  if (!confirm(`Are you sure you want to delete the event "${event.title}"? This action cannot be undone.`)) {
-    return
-  }
+function openDeleteDialog(event: Event) {
+  eventToDelete.value = event
+  showDeleteDialog.value = true
+}
+
+function cancelDelete() {
+  eventToDelete.value = null
+  showDeleteDialog.value = false
+}
+
+async function confirmDelete() {
+  const ev = eventToDelete.value
+  if (!ev) return
   try {
-    await eventService.deleteEvent(event.id)
-    // Remove from local list only on successful delete
-    events.value = events.value.filter(e => e.id !== event.id)
+    await eventService.deleteEvent(ev.id)
+    events.value = events.value.filter(e => e.id !== ev.id)
+    showDeleteDialog.value = false
+    eventToDelete.value = null
   } catch (e: any) {
     console.error('Failed to delete event', e)
-    // Extract and show error message
     const errorMessage = e.response?.data?.message || e.response?.data?.detail || e.message || 'Failed to delete event.'
     alert(`Error: ${errorMessage}`)
   }

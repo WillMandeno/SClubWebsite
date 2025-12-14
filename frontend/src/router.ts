@@ -5,6 +5,7 @@ import Register from './pages/Register.vue'
 import CreateEvent from './pages/CreateEvent.vue'
 import Events from './pages/Events.vue'
 import EditEvent from './pages/EditEvent.vue'
+import Users from './pages/Users.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -28,6 +29,12 @@ const router = createRouter({
       path: '/create-event',
       name: 'CreateEvent',
       component: CreateEvent,
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/admin/users',
+      name: 'Users',
+      component: Users,
       meta: { requiresAuth: true, requiresAdmin: true },
     },
     {

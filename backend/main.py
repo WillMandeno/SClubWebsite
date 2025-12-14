@@ -13,6 +13,7 @@ if _proj_root not in sys.path:
 
 from backend.auth import router as auth_router
 from backend.events import router as events_router
+from backend.admin import router as admin_router
 
 # Create the FastAPI app
 app = FastAPI(title="SClub Calendar API")
@@ -41,6 +42,7 @@ async def health_check():
 
 app.include_router(auth_router)
 app.include_router(events_router)
+app.include_router(admin_router)
 
 
 if __name__ == "__main__":

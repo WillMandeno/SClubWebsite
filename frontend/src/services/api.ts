@@ -44,4 +44,10 @@ export const authService = {
   getMe: () => api.get('/auth/me'),
 }
 
+export const adminService = {
+  deleteUser: (id: number) => api.delete(`/admin/users/${id}`),
+  setUserAdmin: (id: number, isAdmin: boolean) => api.put(`/admin/users/${id}/admin`, { is_admin: isAdmin }),
+  getUsers: () => api.get('/admin/users'),
+}
+
 export default api

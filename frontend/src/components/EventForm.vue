@@ -58,7 +58,7 @@
       label="Location (optional)"
     />
 
-    <v-row justify="center" class="mt-4">
+    <v-row justify="center" class="ma-2">
       <v-btn :loading="loading" color="primary" type="submit">{{ mode === 'create' ? 'Create Event' : 'Save Event' }}</v-btn>
     </v-row>
   </v-form>

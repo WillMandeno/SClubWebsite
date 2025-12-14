@@ -41,3 +41,10 @@ class Event(EventBase):
 
 class EventWithCreator(Event):
     creator: User
+
+
+class AdminUpdate(BaseModel):
+    is_admin: bool
+
+    class Config:
+        from_attributes = True
