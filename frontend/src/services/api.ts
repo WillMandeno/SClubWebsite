@@ -29,9 +29,9 @@ api.interceptors.response.use(
 )
 
 export const eventService = {
-  getEvents: () => api.get('/events'),
+  getEvents: () => api.get('/events/'),
   getEvent: (id: number) => api.get(`/events/${id}`),
-  createEvent: (data: any) => api.post('/events', data),
+  createEvent: (data: any) => api.post('/events/', data),
   updateEvent: (id: number, data: any) => api.put(`/events/${id}`, data),
   deleteEvent: (id: number) => api.delete(`/events/${id}`),
 }
