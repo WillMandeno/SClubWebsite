@@ -4,7 +4,6 @@ import Login from './pages/Login.vue'
 import Register from './pages/Register.vue'
 import CreateEvent from './pages/CreateEvent.vue'
 import Events from './pages/Events.vue'
-import EditEvent from './pages/EditEvent.vue'
 import Users from './pages/Users.vue'
 
 const router = createRouter({
@@ -45,7 +44,7 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, next) => {
   const token = localStorage.getItem('token')
   
   if (to.meta.requiresAuth && !token) {
