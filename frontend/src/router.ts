@@ -44,7 +44,7 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, next) => {
+router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
   
   if (to.meta.requiresAuth && !token) {
