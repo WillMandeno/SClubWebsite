@@ -18,7 +18,7 @@ from backend.admin import router as admin_router
 # Create the FastAPI app
 app = FastAPI(title="SClub Calendar API")
 
-# Add CORS middleware so the Vite dev server can call the API
+# Add CORS (Cross Origin Resource Sharing) middleware so the Vite dev server can call the API
 app.add_middleware(
     CORSMiddleware,
     # For development: explicitly whitelist the Vite dev server origins
