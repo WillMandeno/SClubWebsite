@@ -22,7 +22,7 @@ app = FastAPI(title="SClub Calendar API")
 app.add_middleware(
     CORSMiddleware,
     # For development: explicitly whitelist the Vite dev server origins
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174"],
+    allow_origins=["http://localhost:5173", "https://sclub-calendar.vercel.app"],
     # Keep credentials allowed if you plan to use cookies or other credentialed requests
     allow_credentials=True,
     allow_methods=["*"],
