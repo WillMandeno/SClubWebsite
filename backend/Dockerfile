@@ -20,7 +20,7 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
 # Create app dir and install Python deps
 WORKDIR /app
-COPY backend/requirements.txt ./
+COPY requirements.txt ./
 RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
