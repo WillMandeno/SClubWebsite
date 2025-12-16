@@ -1,0 +1,27 @@
+name: Frontend Type Check
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+  push:
+    branches:
+      - main
+
+jobs:
+  type-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install deps
+        run: npm ci
+      - name: Type check
+        run: npm run type-check
