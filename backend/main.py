@@ -14,6 +14,10 @@ if _proj_root not in sys.path:
 from backend.auth import router as auth_router
 from backend.events import router as events_router
 from backend.admin import router as admin_router
+from fastapi import Header, HTTPException
+from fastapi.responses import PlainTextResponse
+from sqlalchemy import create_engine, text
+from backend.database import DATABASE_URL
 
 # Create the FastAPI app
 app = FastAPI(title="SClub Calendar API")
@@ -43,6 +47,34 @@ async def health_check():
 app.include_router(auth_router)
 app.include_router(events_router)
 app.include_router(admin_router)
+
+
+@app.get("/internal/test-db")
+async def internal_test_db(x_admin_password: str | None = Header(None)):
+    """Temporary endpoint to test DB connectivity from the running service.
+
+    Protects itself by requiring the `X-Admin-Password` header to match the
+    `ADMIN_PASSWORD` environment variable. Returns `SELECT 1` result or a
+    plain-text error for debugging.
+    """
+    secret = os.getenv("ADMIN_PASSWORD")
+    if not secret or x_admin_password != secret:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    try:
+        engine = create_engine(
+            DATABASE_URL,
+            connect_args={"sslmode": "require"},
+            pool_pre_ping=True,
+            pool_size=1,
+            max_overflow=0,
+            pool_timeout=10,
+        )
+        with engine.connect() as conn:
+            r = conn.execute(text("SELECT 1")).scalar()
+        return {"ok": True, "result": r}
+    except Exception as e:
+        return PlainTextResponse(str(e), status_code=500)
 
 
 if __name__ == "__main__":
