@@ -17,7 +17,15 @@ DATABASE_URL = os.getenv(
 )
 
 # Create engine
-engine = create_engine(DATABASE_URL)
+# Ensure TLS is required and make the engine resilient to dropped connections
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"sslmode": "require"},
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=30,
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
