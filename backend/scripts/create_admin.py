@@ -15,9 +15,9 @@ def hash_password(password: str) -> str:
 def create_admin():
     Base.metadata.create_all(bind=engine)
     
-    admin_email = "admin@example.com"
-    admin_display_name = "admin"
-    admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
+    admin_email = "willmandeno@gmail.com"
+    admin_display_name = "Will Mandeno"
+    admin_password = os.getenv("ADMIN_PASSWORD", "password")
     
     db = SessionLocal()
     
