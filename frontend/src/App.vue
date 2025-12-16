@@ -9,7 +9,7 @@
         </v-icon>
         <span class="toolbar-title-text" @click="router.push('/')">SClub Calendar</span>
       </v-toolbar-title>
-      <v-btn class="mx-2" v-if="!isAuthenticated" text to="/login">Login</v-btn>
+      
     </v-app-bar>
 
       <v-navigation-drawer v-model="drawer" app temporary>
@@ -33,6 +33,8 @@
             <v-list-item-title>Events</v-list-item-title>
           </v-list-item>
 
+          
+
           <v-list-item link @click="goToCreate" class="d-flex align-center">
             <v-list-item-title>Create Event</v-list-item-title>
           </v-list-item>
@@ -43,6 +45,10 @@
 
           <v-list-item link v-if="isAuthenticated" @click="logoutAndClose" class="d-flex align-center">
             <v-list-item-title><b>Logout</b></v-list-item-title>
+          </v-list-item>
+
+          <v-list-item link v-if="!isAuthenticated" @click="goTo('/login')" class="d-flex align-center">
+            <v-list-item-title><b>Login</b></v-list-item-title>
           </v-list-item>
         </v-list>
       </v-navigation-drawer>
