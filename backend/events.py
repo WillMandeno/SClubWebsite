@@ -5,6 +5,9 @@ from .database import SessionLocal
 from .models import Event, User
 from .schemas import EventCreate, Event as EventSchema, EventWithCreator
 from .auth import get_current_user
+from .utils import ensure_utc, utcnow
+from datetime import datetime
+from datetime import timezone
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -16,6 +19,13 @@ def get_db():
     finally:
         db.close()
 
+def ensure_z(dt: datetime) -> str:
+    """Convert naive or aware datetime to ISO string with Z"""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    else:
+        dt = dt.astimezone(timezone.utc)
+    return dt.isoformat().replace('+00:00', 'Z')
 
 @router.get("/", response_model=List[EventSchema])
 def list_events(db: Session = Depends(get_db)):
@@ -24,6 +34,8 @@ def list_events(db: Session = Depends(get_db)):
     for e in events:
         event_dict = e[0].__dict__.copy()
         event_dict['creator_name'] = e[1]
+        event_dict['start_time'] = ensure_z(event_dict['start_time'])
+        event_dict['end_time'] = ensure_z(event_dict['end_time'])
         result.append(EventSchema.model_validate(event_dict).model_dump())
     return result
 
@@ -33,15 +45,22 @@ def create_event(event: EventCreate, current_user=Depends(get_current_user), db:
     ev = Event(
         title=event.title,
         description=event.description,
-        start_time=event.start_time,
-        end_time=event.end_time,
+        start_time=ensure_utc(event.start_time),
+        end_time=ensure_utc(event.end_time),
         location=event.location,
         created_by=current_user.id,
     )
+    # Ensure created_at/updated_at are set in Python as a fallback
+    ev.created_at = utcnow()
+    ev.updated_at = utcnow()
     db.add(ev)
     db.commit()
     db.refresh(ev)
-    return EventSchema.model_validate(ev).model_dump()
+    # Send ISO string with Z to frontend
+    ev_dict = EventSchema.model_validate(ev).model_dump()
+    ev_dict['start_time'] = ensure_z(ev.start_time)
+    ev_dict['end_time'] = ensure_z(ev.end_time)
+    return ev_dict
 
 
 @router.put("/{event_id}", response_model=EventSchema)
@@ -58,7 +77,10 @@ def update_event(event_id: int, payload: EventCreate, current_user=Depends(get_c
     ev.location = payload.location
     db.commit()
     db.refresh(ev)
-    return EventSchema.model_validate(ev).model_dump()
+    ev_dict = EventSchema.model_validate(ev).model_dump()
+    ev_dict['start_time'] = ensure_z(ev.start_time)
+    ev_dict['end_time'] = ensure_z(ev.end_time)
+    return ev_dict
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)

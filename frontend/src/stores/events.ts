@@ -11,8 +11,9 @@ export const useEventsStore = defineStore('events', () => {
     loading.value = true
     try {
       const res = await eventService.getEvents()
-      // assume backend returns an array of events
-      events.value = res.data
+      const data = Array.isArray(res.data) ? res.data : []
+
+      events.value = data
       return events.value
     } finally {
       loading.value = false

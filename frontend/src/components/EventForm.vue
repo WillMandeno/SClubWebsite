@@ -202,19 +202,27 @@ onMounted(() => {
   }
 })
 
+const test = () => {
+  const now = new Date()
+  console.log("offset is", now.getTimezoneOffset())
+}
+
+const buildLocalDate = (date: string, time: string) => {
+  const [y, m, d] = date.split('-').map(Number)
+  const [hh, mm] = time.split(':').map(Number)
+
+  // Construct a Date in UTC so the ISO string preserves the picked wall-clock
+  // time regardless of the user's local timezone. This makes the backend
+  // receive a UTC instant that represents the same human time the user chose.
+  return new Date(y, m - 1, d, hh ?? 0, mm ?? 0, 0)
+}
+
 const handleSubmit = async () => {
   const { valid } = await form.value.validate()
   if (!valid) return
 
-  const toYYYYMMDD = (v: string) => {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v
-    const d = new Date(v)
-    if (isNaN(d.getTime())) throw new Error(`Invalid date: ${v}`)
-    return d.toISOString().split('T')[0]
-  }
-
-  const startISO = new Date(`${toYYYYMMDD(startDate.value)}T${startTime.value}:00`).toISOString()
-  const endISO = new Date(`${toYYYYMMDD(endDate.value)}T${endTime.value}:00`).toISOString()
+  const startISO = buildLocalDate(startDate.value, startTime.value).toISOString()
+  const endISO = buildLocalDate(endDate.value, endTime.value).toISOString()
 
   emit('submit', {
     title: title.value,

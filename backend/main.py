@@ -26,7 +26,15 @@ app = FastAPI(title="SClub Calendar API")
 app.add_middleware(
     CORSMiddleware,
     # For development: explicitly whitelist the Vite dev server origins
-    allow_origins=["http://localhost:5173", "https://sclub-calendar.vercel.app"],
+    allow_origins=[
+        # Production frontend URL
+        "https://sclub-calendar.vercel.app",
+        # Development frontend URLs 
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ],
     # Keep credentials allowed if you plan to use cookies or other credentialed requests
     allow_credentials=True,
     allow_methods=["*"],
@@ -76,6 +84,25 @@ async def internal_test_db(x_admin_password: str | None = Header(None)):
     except Exception as e:
         return PlainTextResponse(str(e), status_code=500)
 
+@app.middleware("http")
+async def log_request(request, call_next):
+    # Only inspect bodies for methods that may include one.
+    if request.method in ("POST", "PUT", "PATCH"):
+        # Read the body (consumes the incoming stream) and log a safe preview.
+        body = await request.body()
+        preview = body.decode(errors="replace")[:8192]
+        print("RAW BODY:", preview)
+
+        # Make the body available again to downstream handlers by
+        # replacing the request's receive callable with one that returns
+        # the same body payload.
+        async def _receive() -> dict:
+            return {"type": "http.request", "body": body, "more_body": False}
+
+        request._receive = _receive
+
+    response = await call_next(request)
+    return response
 
 if __name__ == "__main__":
     # Run with the venv's python to ensure correct packages are used
