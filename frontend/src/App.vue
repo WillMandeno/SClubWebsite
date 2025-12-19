@@ -19,6 +19,7 @@
               <div class="d-flex align-center">
                 <v-icon class="mr-2">mdi-account-circle</v-icon>
                 <v-list-item-title class="user-display-name">{{ userDisplayName }}</v-list-item-title>
+                <v-list-item-subtitle class="ml-1" v-if="isAdmin">(Admin)</v-list-item-subtitle>
               </div>
             </v-list-item-content>
           </v-list-item>
