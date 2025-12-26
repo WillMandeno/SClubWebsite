@@ -15,11 +15,11 @@
               <div v-else>
                 <v-data-table :items="users" :headers="headers" class="elevation-1">
                   <template #item.is_admin="{ item }">
-                    <v-switch v-model="item.is_admin_local" :disabled="item.id === auth.user?.id" @change="toggleAdmin(item)" :label="item.is_admin_local ? 'Admin' : 'User'" hide-details dense />
+                    <v-switch v-model="item.is_admin_local" :disabled="item.id === auth.user?.id || auth.user?.email === 'willmandeno@gmail.com'" @change="toggleAdmin(item)" :label="item.is_admin_local ? 'Admin' : 'User'" hide-details dense />
                   </template>
 
                   <template #item.actions="{ item }">
-                    <v-btn color="error" variant="tonal" small :disabled="item.id === auth.user?.id" @click="confirmDelete(item)">Delete</v-btn>
+                    <v-btn color="error" variant="tonal" small :disabled="item.id === auth.user?.id || auth.user?.email === 'willmandeno@gmail.com'" @click="confirmDelete(item)">Delete</v-btn>
                   </template>
                 </v-data-table>
               </div>
