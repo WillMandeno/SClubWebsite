@@ -56,34 +56,6 @@ app.include_router(auth_router)
 app.include_router(events_router)
 app.include_router(admin_router)
 
-
-@app.get("/internal/test-db")
-async def internal_test_db(x_admin_password: str | None = Header(None)):
-    """Temporary endpoint to test DB connectivity from the running service.
-
-    Protects itself by requiring the `X-Admin-Password` header to match the
-    `ADMIN_PASSWORD` environment variable. Returns `SELECT 1` result or a
-    plain-text error for debugging.
-    """
-    secret = os.getenv("ADMIN_PASSWORD")
-    if not secret or x_admin_password != secret:
-        raise HTTPException(status_code=403, detail="Forbidden")
-
-    try:
-        engine = create_engine(
-            DATABASE_URL,
-            connect_args={"sslmode": "require"},
-            pool_pre_ping=True,
-            pool_size=1,
-            max_overflow=0,
-            pool_timeout=10,
-        )
-        with engine.connect() as conn:
-            r = conn.execute(text("SELECT 1")).scalar()
-        return {"ok": True, "result": r}
-    except Exception as e:
-        return PlainTextResponse(str(e), status_code=500)
-
 @app.middleware("http")
 async def log_request(request, call_next):
     # Only inspect bodies for methods that may include one.
