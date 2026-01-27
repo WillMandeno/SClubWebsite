@@ -40,10 +40,11 @@
     <v-dialog v-model="showDayDialog" max-width="640">
       <v-card v-if="selectedDay">
         <v-card-title>{{ formatDate(selectedDay.date) }}</v-card-title>
+        <v-card-subtitle>Events on this day:</v-card-subtitle>
         <v-card-text>
           <div v-if="selectedDay.events.length === 0">No events on this day.</div>
           <div v-else>
-            <v-list dense>
+            <v-list>
               <v-list-item v-for="ev in selectedDay.events" :key="ev.id" @click="onEventClick(ev)">
                 <v-list-item-content>
                   <v-list-item-title>{{ ev.title }}</v-list-item-title>
