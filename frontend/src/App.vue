@@ -36,7 +36,7 @@
 
           
 
-          <v-list-item link @click="goToCreate" class="d-flex align-center">
+          <v-list-item link @click="goToCreate" v-if="isAdmin" class="d-flex align-center">
             <v-list-item-title>Create Event</v-list-item-title>
           </v-list-item>
 

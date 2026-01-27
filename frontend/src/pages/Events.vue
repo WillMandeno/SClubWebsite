@@ -26,7 +26,7 @@
         <div v-if="!events.length">No upcoming events.</div>
       </v-card-text>
     </v-card>
-    <v-btn v-if="isAuthenticated" class="mt-4" color="primary" @click="goToCreate">Create Event</v-btn>
+    <v-btn v-if="isAdmin" class="mt-4" color="primary" @click="goToCreate">Create Event</v-btn>
     
     <!-- View Event Dialog -->
     <EventDialog v-model="showViewDialog" :event="selectedEvent" />
@@ -80,7 +80,7 @@ const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
 const eventToDelete = ref<Event | null>(null)
 
-const isAuthenticated = computed(() => !!auth.token)
+const isAdmin = computed(() => auth.user?.is_admin === true)
 
 // Format a localized, human-friendly date/time range.
 const datePartFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
