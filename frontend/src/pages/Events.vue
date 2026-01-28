@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="events-section">
     <v-card class="pa-4">
       <v-card-title class="d-flex align-center justify-space-between">
         Upcoming Events
@@ -12,7 +12,7 @@
       </v-card-title>
       <v-card-text>
         <v-list>
-          <v-list-item v-for="event in events" :key="event.id" class="event-row position-relative" @click="openViewDialog(event)">
+          <v-list-item v-for="event in upcomingEvents" :key="event.id" class="event-row position-relative" @click="openViewDialog(event)">
             <v-row class="w-100 align-center" no-gutters>
               <v-col cols="12" class="pl-0 event-left">
                 <div class="event-title-text">{{ event.title }}</div>
@@ -29,7 +29,7 @@
             </div>
           </v-list-item>
         </v-list>
-        <div v-if="!events.length">No upcoming events.</div>
+        <div v-if="!upcomingEvents.length">No upcoming events.</div>
       </v-card-text>
     </v-card>
     
@@ -65,6 +65,37 @@
       </v-card>
     </v-dialog>
   </div>
+  <div class="events-section pending-section" v-if="auth.user?.is_admin || pendingEvents.length">
+    <v-card class="pa-4 pending-card">
+      <v-card-title class="d-flex align-center justify-space-between">
+        Pending Events
+      </v-card-title>
+      <v-card-text>
+        <v-list>
+          <v-list-item v-for="event in pendingEvents" :key="event.id" class="event-row position-relative" @click="openViewDialog(event)">
+            <v-row class="w-100 align-center" no-gutters>
+              <v-col cols="12" class="pl-0 event-left">
+                <div class="event-title-text">{{ event.title }}</div>
+                <div class="event-range">{{ formatRange(event.start_time, event.end_time) }}</div>
+              </v-col>
+            </v-row>
+            <div class="event-action">
+              <v-btn v-if="auth.user && auth.user.is_admin" icon size="small" @click.stop="approveEvent(event)" title="Approve">
+                <v-icon>mdi-check</v-icon>
+              </v-btn>
+              <v-btn v-if="auth.user && (auth.user.id === event.created_by || auth.user.is_admin)" icon size="small" @click.stop="openEditDialog(event)" title="Edit">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+              <v-btn v-if="auth.user && (auth.user.id === event.created_by || auth.user.is_admin)" icon size ="small" @click.stop="openDeleteDialog(event)" title="Delete">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </div>
+          </v-list-item>
+        </v-list>
+        <div v-if="!pendingEvents.length">No pending events.</div>
+      </v-card-text>
+    </v-card>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -86,6 +117,24 @@ const showDeleteDialog = ref(false)
 const eventToDelete = ref<Event | null>(null)
 
 const isAuthenticated = computed(() => !!auth.token)
+
+// Split events into upcoming (approved) and pending lists.
+const upcomingEvents = computed(() => events.value.filter(e => !e.pending))
+const pendingEvents = computed(() => {
+  if (!auth.user) return []
+  if (auth.user.is_admin) return events.value.filter(e => e.pending)
+  return events.value.filter(e => e.pending && e.created_by === auth.user.id)
+})
+
+async function approveEvent(ev: Event) {
+  try {
+    await eventService.updateEvent(ev.id, { pending: false } as any)
+    await fetchEvents()
+  } catch (e) {
+    console.error('Failed to approve event', e)
+    alert('Failed to approve event. Please try again.')
+  }
+}
 
 // Format a localized, human-friendly date/time range.
 const datePartFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
@@ -246,5 +295,18 @@ onMounted(() => {
 .event-action .v-btn:hover {
   background: rgba(0,0,0,0.1) !important;
   border-radius: 50% !important;
+}
+
+/* Layout and visual tweaks for approved vs pending sections */
+.events-section {
+  margin-bottom: 20px;
+}
+
+.pending-card {
+  border-left: 4px solid;
+}
+
+.v-divider {
+  margin: 20px 0;
 }
 </style>
