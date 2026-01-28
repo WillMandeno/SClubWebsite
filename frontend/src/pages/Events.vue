@@ -4,7 +4,6 @@
       <v-card-title class="d-flex align-center justify-space-between">
         Upcoming Events
         <v-btn
-          v-if="isAuthenticated"
           icon="mdi-plus"
           color="primary"
           @click="goToCreate"
