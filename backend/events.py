@@ -49,6 +49,7 @@ def create_event(event: EventCreate, current_user=Depends(get_current_user), db:
         end_time=ensure_utc(event.end_time),
         location=event.location,
         created_by=current_user.id,
+        pending=event.pending,
     )
     # Ensure created_at/updated_at are set in Python as a fallback
     ev.created_at = utcnow()
@@ -75,6 +76,8 @@ def update_event(event_id: int, payload: EventCreate, current_user=Depends(get_c
     ev.start_time = payload.start_time
     ev.end_time = payload.end_time
     ev.location = payload.location
+    ev.pending = payload.pending
+    ev.updated_at = utcnow()
     db.commit()
     db.refresh(ev)
     ev_dict = EventSchema.model_validate(ev).model_dump()

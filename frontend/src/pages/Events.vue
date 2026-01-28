@@ -12,7 +12,7 @@
       </v-card-title>
       <v-card-text>
         <v-list>
-          <v-list-item v-for="event in upcomingEvents" :key="event.id" class="event-row position-relative" @click="openViewDialog(event)">
+          <v-list-item v-for="event in events" :key="event.id" class="event-row position-relative" @click="openViewDialog(event)">
             <v-row class="w-100 align-center" no-gutters>
               <v-col cols="12" class="pl-0 event-left">
                 <div class="event-title-text">{{ event.title }}</div>
@@ -29,7 +29,7 @@
             </div>
           </v-list-item>
         </v-list>
-        <div v-if="!upcomingEvents.length">No upcoming events.</div>
+        <div v-if="!events.length">No upcoming events.</div>
       </v-card-text>
     </v-card>
     
@@ -55,7 +55,7 @@
       <v-card>
         <v-card-title>Delete event</v-card-title>
         <v-card-text>
-          Are you sure you? This action cannot be undone.
+          Are you sure? This action cannot be undone.
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -102,29 +102,22 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useEventsStore } from '@/stores/events'
 import { eventService } from '@/services/api'
 import EventDialog from '@/components/EventDialog.vue'
 import EventForm from '@/components/EventForm.vue'
 import { Event } from '@/types'
 
 const events = ref<Event[]>([])
+const pendingEvents = ref<Event[]>([])
 const router = useRouter()
 const auth = useAuthStore()
+const eventsStore = useEventsStore()
 const selectedEvent = ref<Event | null>(null)
 const showViewDialog = ref(false)
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
 const eventToDelete = ref<Event | null>(null)
-
-const isAuthenticated = computed(() => !!auth.token)
-
-// Split events into upcoming (approved) and pending lists.
-const upcomingEvents = computed(() => events.value.filter(e => !e.pending))
-const pendingEvents = computed(() => {
-  if (!auth.user) return []
-  if (auth.user.is_admin) return events.value.filter(e => e.pending)
-  return events.value.filter(e => e.pending && e.created_by === auth.user.id)
-})
 
 async function approveEvent(ev: Event) {
   try {
@@ -193,6 +186,7 @@ async function confirmDelete() {
   try {
     await eventService.deleteEvent(ev.id)
     events.value = events.value.filter(e => e.id !== ev.id)
+    pendingEvents.value = pendingEvents.value.filter(e => e.id !== ev.id)
     showDeleteDialog.value = false
     eventToDelete.value = null
   } catch (e: any) {
@@ -228,7 +222,14 @@ async function fetchEvents() {
 }
 
 onMounted(() => {
-  fetchEvents()
+  eventsStore.fetchEvents().then(() => {
+    events.value = eventsStore.events
+    pendingEvents.value = eventsStore.pendingEvents.filter(ev => {
+      if (!auth.user) return false
+      if (auth.user.is_admin) return true
+      return ev.created_by === auth.user.id
+    })
+  })
 })
 </script>
 

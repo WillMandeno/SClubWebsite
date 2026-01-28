@@ -30,5 +30,6 @@ class Event(Base):
     created_by = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    pending = Column(Boolean, default=True)
 
     creator = relationship("User", back_populates="events")
