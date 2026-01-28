@@ -16,6 +16,7 @@ export interface Event {
   creator_name: string
   created_at: string
   updated_at: string
+  pending: boolean
 }
 
 export interface EventWithCreator extends Event {

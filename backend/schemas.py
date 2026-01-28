@@ -31,6 +31,7 @@ class EventBase(BaseModel):
     start_time: datetime
     end_time: datetime
     location: Optional[str] = None
+    pending: bool = True
 
     @field_validator('start_time', 'end_time', mode='before')
     def _ensure_start_end_utc(cls, v):
