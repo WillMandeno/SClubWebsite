@@ -17,10 +17,15 @@ DATABASE_URL = os.getenv(
 )
 
 # Create engine
-# Ensure TLS is required and make the engine resilient to dropped connections
+# For local development (localhost/127.0.0.1) do not force SSL; require SSL for remote URLs
+connect_args = {}
+# If the DATABASE_URL references localhost/127.0.0.1, avoid forcing SSL for local development.
+if 'localhost' not in DATABASE_URL and '127.0.0.1' not in DATABASE_URL:
+    connect_args = {"sslmode": "require"}
+
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"sslmode": "require"},
+    connect_args=connect_args,
     pool_pre_ping=True,
     pool_size=5,
     max_overflow=10,

@@ -121,7 +121,7 @@ const eventToDelete = ref<Event | null>(null)
 
 async function approveEvent(ev: Event) {
   try {
-    await eventService.updateEvent(ev.id, { pending: false } as any)
+    await eventService.updateEvent(ev.id, { ...ev, pending: false } as any)
     await fetchEvents()
   } catch (e) {
     console.error('Failed to approve event', e)

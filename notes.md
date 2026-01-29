@@ -5,6 +5,12 @@ Opening postgres without password:
 sudo -u postgres psql
 ```
 
+Opening pgsql terminal for dev postgres instance on macOS:
+
+```bash
+psql -h 127.0.0.1 -U postgres -d sclub_calendar
+```
+
 Activating and deactivating the python virtual environment:
 ```bash
 source venv/bin/activate
