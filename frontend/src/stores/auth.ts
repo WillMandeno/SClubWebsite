@@ -13,6 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
 	const token = ref<string | null>(localStorage.getItem('token'))
 	const user = ref<User | null>(null)
 	const loading = ref(false)
+	const isHydrated = ref(false)
 
 	function normalizeUser(u: any): User | null {
 		if (!u) return null
@@ -79,19 +80,21 @@ export const useAuthStore = defineStore('auth', () => {
 		user.value = null
 	}
 
-	function init() {
+	async function init() {
 		const t = localStorage.getItem('token')
 		if (t) {
 			token.value = t
-			// don't await here; allow app to continue mounting
-			void fetchMe()
+			// maybe don't await here; allow app to continue mounting
+			await fetchMe()
 		}
+		isHydrated.value = true
 	}
 
 	return {
 		token,
 		user,
 		loading,
+		isHydrated,
 		setToken,
 		fetchMe,
 		login,
