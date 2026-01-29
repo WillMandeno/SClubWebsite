@@ -9,6 +9,7 @@ const SJCLightColourScheme = {
     surface: '#f1f1f1ff',
     primary: '#03772f',
     secondary: '#ffaa00ff',
+    pending: '#ffc24966',
     error: '#d20000ff',
     info: '#2196F3',
     success: '#4CAF50',

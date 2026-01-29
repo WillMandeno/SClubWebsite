@@ -14,8 +14,9 @@ export const useEventsStore = defineStore('events', () => {
     try {
       const res = await eventService.getEvents()
       const data = Array.isArray(res.data) ? res.data : []
-
-      events.value = data.filter((event: Event) => !event.pending)
+      // Store the full event set; components should filter as needed.
+      events.value = data
+      // keep pendingEvents for compatibility, but it's derived from full set
       pendingEvents.value = data.filter((event: Event) => event.pending)
       return events.value, pendingEvents.value
     } finally {

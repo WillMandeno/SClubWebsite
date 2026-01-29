@@ -25,12 +25,12 @@
       <v-calendar
         ref="calendar"
         v-model="value"
-        :events="calendarEvents"
+        :events="events"
         :type="type"
         @click:day="(_, scope) => onDayClickInternal(scope.date)"
       >
         <template #event="{ event }">
-          <div class="event-chip" :title="event.name" @click.stop="onEventClickInternal(event)">
+          <div :class="event.pending ? 'pending-event-chip' : 'event-chip'" :title="event.name" @click.stop="onEventClickInternal(event)">
             {{ event.name }}
           </div>
         </template>
@@ -88,13 +88,14 @@ watch(() => props.year, (v) => {
   if (v !== undefined) value.value = `${v}-${String((props.month ?? new Date().getMonth() + 1)).padStart(2, '0')}-01`
 })
 
-const calendarEvents = computed<VuetifyEvent[]>(() => (props.events ?? []).map(ev => ({
+const events = computed<VuetifyEvent[]>(() => (props.events ?? []).map(ev => ({
   name: ev.title,
   start: new Date(ev.start_time),
   end: new Date(ev.end_time),
   id: ev.id,
   raw: ev,
-  color: 'secondary',
+  pending: !!ev.pending,
+  color: 'secondary'
 })))
 
 const monthLabel = computed(() => {
@@ -117,14 +118,17 @@ function onDayClickInternal(payload: any) {
   const date = payload?.date ?? payload
   const isoDate = (typeof date === 'string') ? date.split('T')[0] : String(date)
 
-  const dayStart = new Date(isoDate + 'T00:00:00Z')
-  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000) // End of day: start of next day
+  // Build local start/end-of-day boundaries (avoid forcing UTC)
+  const dayStart = new Date(isoDate)
+  dayStart.setHours(0, 0, 0, 0)
+  const dayEnd = new Date(dayStart)
+  dayEnd.setDate(dayEnd.getDate() + 1)
 
-  const eventsForDay = (props.events ?? []).filter(e => { 
+  const eventsForDay = (props.events ?? []).filter(e => {
     const evStart = new Date(e.start_time)
     const evEnd = new Date(e.end_time)
-    const overlaps = (evStart <= dayEnd) && (evEnd >= dayStart)
-    console.log(`Event ${e.title}: start=${e.start_time}, end=${e.end_time}, dayStart=${dayStart.toISOString()}, dayEnd=${dayEnd.toISOString()}, overlaps=${overlaps}`)
+    // use strict overlap: event starts before dayEnd and ends after dayStart
+    const overlaps = (evStart < dayEnd) && (evEnd > dayStart)
     return overlaps
   })
   
@@ -141,7 +145,16 @@ function onEventClick(ev: any) {
 
 <style scoped>
 .event-chip {
-  background: rgba(255,170,0,0.12);
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  background: '#ffaa00ff'; 
+}
+
+.pending-event-chip {
   padding: 4px 8px;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -149,6 +162,8 @@ function onEventClick(ev: any) {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  background: #ffde92;
+  opacity: 0.6;
 }
 </style>
 

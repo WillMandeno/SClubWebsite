@@ -3,7 +3,7 @@
     <v-col cols="12" md="8">
       <v-card class="mx-auto pa-6" elevation="6">
         <v-card-text class="mb-4">
-          <Calendar :events="eventsStore.events" />
+          <Calendar :events="eventsStore.events"/>
         </v-card-text>
       </v-card>
     </v-col>
