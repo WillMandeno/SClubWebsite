@@ -30,8 +30,15 @@
         @click:day="(_, scope) => onDayClickInternal(scope.date)"
       >
         <template #event="{ event }">
-          <div :class="event.pending ? 'pending-event-chip' : 'event-chip'" :title="event.name" @click.stop="onEventClickInternal(event)">
+          <div
+            class="event-chip"
+            :class="{ pending: event.pending }"
+            @click.stop="onEventClickInternal(event)"
+          >
+          <span class="event-text">
             {{ event.name }}
+          </span>
+          <v-icon small v-if="event.pending">mdi-clock-outline</v-icon>
           </div>
         </template>
       </v-calendar>
@@ -113,7 +120,7 @@ const events = computed<VuetifyEvent[]>(() => (props.events ?? []).map(ev => ({
   id: ev.id,
   raw: ev,
   pending: !!ev.pending,
-  color: 'secondary'
+  color: ev.pending ? 'grey-lighten-1' : 'secondary'
 })))
 
 const monthLabel = computed(() => {
@@ -162,25 +169,26 @@ function onEventClick(ev: any) {
 
 <style scoped>
 .event-chip {
-  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  padding: 0 6px;
   font-size: 0.75rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  background: '#ffaa00ff'; 
+  gap: 6px;
 }
 
-.pending-event-chip {
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
+.event-text {
+  flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
-  background: #ffde92;
-  opacity: 0.6;
+}
+
+.event-chip.pending {
+  opacity: 0.55;
+  background: #ffaa00ff;
 }
 
 </style>
