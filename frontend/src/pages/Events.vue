@@ -121,7 +121,7 @@ const eventToDelete = ref<Event | null>(null)
 
 async function approveEvent(ev: Event) {
   try {
-    await eventService.updateEvent(ev.id, { pending: false } as any)
+    await eventService.updateEvent(ev.id, { ...ev, pending: false } as any)
     await fetchEvents()
   } catch (e) {
     console.error('Failed to approve event', e)
@@ -214,22 +214,22 @@ async function handleSave(data: { title: string; description: string; start_time
 
 async function fetchEvents() {
   try {
-    const res = await eventService.getEvents()
-    events.value = res.data || []
+    await eventsStore.fetchEvents()
+    // store exposes refs; copy into local reactive refs
+    // store.events now contains the full event set; filter locally
+    events.value = eventsStore.events.filter(ev => !ev.pending)
+    pendingEvents.value = eventsStore.events.filter(ev => {
+      if (!auth.user) return false
+      if (auth.user.is_admin) return ev.pending
+      return ev.pending && ev.created_by === auth.user.id
+    })
   } catch (e) {
     console.error('Failed to fetch events', e)
   }
 }
 
 onMounted(() => {
-  eventsStore.fetchEvents().then(() => {
-    events.value = eventsStore.events
-    pendingEvents.value = eventsStore.pendingEvents.filter(ev => {
-      if (!auth.user) return false
-      if (auth.user.is_admin) return true
-      return ev.created_by === auth.user.id
-    })
-  })
+  fetchEvents()
 })
 </script>
 

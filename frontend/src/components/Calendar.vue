@@ -25,12 +25,12 @@
       <v-calendar
         ref="calendar"
         v-model="value"
-        :events="calendarEvents"
+        :events="displayEvents"
         :type="type"
         @click:day="(_, scope) => onDayClickInternal(scope.date)"
       >
         <template #event="{ event }">
-          <div class="event-chip" :title="event.name" @click.stop="onEventClickInternal(event)">
+          <div :class="event.pending ? 'pending-event-chip' : 'event-chip'" :title="event.name" @click.stop="onEventClickInternal(event)">
             {{ event.name }}
           </div>
         </template>
@@ -45,9 +45,16 @@
           <div v-if="selectedDay.events.length === 0">No events on this day.</div>
           <div v-else>
             <v-list>
-              <v-list-item v-for="ev in selectedDay.events" :key="ev.id" @click="onEventClick(ev)">
+              <v-list-item
+                v-for="ev in selectedDay.events"
+                :key="ev.id"
+                @click="onEventClick(ev)"
+                :style="{ opacity: ev.pending ? 0.6 : 1 }"
+              >
                 <v-list-item-content>
-                  <v-list-item-title>{{ ev.title }}</v-list-item-title>
+                  <v-list-item-title>
+                    {{ ev.title }}
+                  </v-list-item-title>
                   <v-list-item-subtitle v-if="ev.description">{{ ev.description }}</v-list-item-subtitle>
                 </v-list-item-content>
               </v-list-item>
@@ -68,6 +75,7 @@
 import { computed, ref, watch } from 'vue'
 import EventDialog from './EventDialog.vue';
 import type { Event } from '@/types';
+import { useAuthStore } from '@/stores/auth'
 
 type VuetifyEvent = { name: string; start: string | Date; end?: string | Date; color?: string; id?: string | number; raw?: any }
 
@@ -83,18 +91,29 @@ const selectedDay = ref<{ date: string; events: Event[] } | null>(null)
 const showDayDialog = ref(false)
 const selectedEvent = ref<Event | undefined>(undefined)
 const showEventDialog = ref(false)
+const auth = useAuthStore()
+
+function canViewEvent(ev: Event) {
+  if (!ev.pending) return true
+  if (auth.user?.is_admin) return true
+  if (auth.user && ev.created_by === auth.user.id) return true
+  return false
+}
+
+const displayEvents = computed<VuetifyEvent[]>(() => events.value.filter(v => canViewEvent(v.raw)))
 
 watch(() => props.year, (v) => {
   if (v !== undefined) value.value = `${v}-${String((props.month ?? new Date().getMonth() + 1)).padStart(2, '0')}-01`
 })
 
-const calendarEvents = computed<VuetifyEvent[]>(() => (props.events ?? []).map(ev => ({
+const events = computed<VuetifyEvent[]>(() => (props.events ?? []).map(ev => ({
   name: ev.title,
   start: new Date(ev.start_time),
   end: new Date(ev.end_time),
   id: ev.id,
   raw: ev,
-  color: 'secondary',
+  pending: !!ev.pending,
+  color: 'secondary'
 })))
 
 const monthLabel = computed(() => {
@@ -117,19 +136,21 @@ function onDayClickInternal(payload: any) {
   const date = payload?.date ?? payload
   const isoDate = (typeof date === 'string') ? date.split('T')[0] : String(date)
 
-  const dayStart = new Date(isoDate + 'T00:00:00Z')
-  const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000) // End of day: start of next day
+  // Build local start/end-of-day boundaries (avoid forcing UTC)
+  const dayStart = new Date(isoDate)
+  dayStart.setHours(0, 0, 0, 0)
+  const dayEnd = new Date(dayStart)
+  dayEnd.setDate(dayEnd.getDate() + 1)
 
-  const eventsForDay = (props.events ?? []).filter(e => { 
-    const evStart = new Date(e.start_time)
-    const evEnd = new Date(e.end_time)
-    const overlaps = (evStart <= dayEnd) && (evEnd >= dayStart)
-    console.log(`Event ${e.title}: start=${e.start_time}, end=${e.end_time}, dayStart=${dayStart.toISOString()}, dayEnd=${dayEnd.toISOString()}, overlaps=${overlaps}`)
-    return overlaps
-  })
-  
-  console.log(`Day ${isoDate}: found ${eventsForDay.length} events`)
-  selectedDay.value = { date: isoDate, events: eventsForDay }
+    // Use the computed displayEvents (VuetifyEvent) so visibility rules match the calendar
+    const eventsForDay = displayEvents.value.filter(ev => {
+      const evStart = ev.start instanceof Date ? ev.start : new Date(ev.start)
+      const evEnd = ev.end instanceof Date ? ev.end! : new Date(ev.end!)
+      const overlaps = (evStart < dayEnd) && (evEnd > dayStart)
+      return overlaps
+    }).map(ev => ev.raw)
+
+    selectedDay.value = { date: isoDate, events: eventsForDay }
   showDayDialog.value = true
 }
 
@@ -141,7 +162,16 @@ function onEventClick(ev: any) {
 
 <style scoped>
 .event-chip {
-  background: rgba(255,170,0,0.12);
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  background: '#ffaa00ff'; 
+}
+
+.pending-event-chip {
   padding: 4px 8px;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -149,6 +179,9 @@ function onEventClick(ev: any) {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  background: #ffde92;
+  opacity: 0.6;
 }
+
 </style>
 

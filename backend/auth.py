@@ -27,7 +27,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-
 def get_db():
     db = SessionLocal()
     try:
@@ -37,7 +36,18 @@ def get_db():
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except ValueError:
+        # bcrypt raises ValueError when the provided password is longer
+        # than 72 bytes. Return a clear HTTP error so callers can handle it.
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Password too long for bcrypt (72 bytes). "
+                "Please reset your password or use a shorter one."
+            ),
+        )
 
 
 def get_password_hash(password: str) -> str:

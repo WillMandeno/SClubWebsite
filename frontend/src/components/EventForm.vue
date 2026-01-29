@@ -202,11 +202,6 @@ onMounted(() => {
   }
 })
 
-const test = () => {
-  const now = new Date()
-  console.log("offset is", now.getTimezoneOffset())
-}
-
 const buildLocalDate = (date: string, time: string) => {
   const [y, m, d] = date.split('-').map(Number)
   const [hh, mm] = time.split(':').map(Number)
