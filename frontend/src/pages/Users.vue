@@ -1,5 +1,4 @@
 <template>
-  <div>
     <v-container>
       <v-row>
         <v-col cols="12">
@@ -8,20 +7,32 @@
               Users
             </v-card-title>
             <v-card-text>
-              <div v-if="!isAdmin" class="text-center">
+              <!-- Auth store not loaded -->
+              <div v-if="!authReady || isLoading">
+                <v-container>
+                    <v-row justify="center">
+                      <v-col cols="12" class="text-center">
+                        <v-progress-circular indeterminate color="primary" size="64" />
+                      </v-col>
+                    </v-row>
+                  </v-container>
+              </div>
+              <!-- Auth store loaded, but not admin -->
+              <div v-else-if="!isAdmin" class="text-center">
                 <v-alert type="error">You are not authorized to view this page.</v-alert>
               </div>
-
+              <!-- Admin view -->
               <div v-else>
-                <v-data-table :items="users" :headers="headers" class="elevation-1">
-                  <template #item.is_admin="{ item }">
-                    <v-switch v-model="item.is_admin_local" :disabled="item.id === auth.user?.id || item.user?.email === 'willmandeno@gmail.com'" @change="toggleAdmin(item)" :label="item.is_admin_local ? 'Admin' : 'User'" hide-details dense />
-                  </template>
+                <!-- Loading users from API -->
+                  <v-data-table :items="users" :headers="headers" class="elevation-1">
+                    <template #item.is_admin="{ item }">
+                      <v-switch v-model="item.is_admin_local" :disabled="item.id === auth.user?.id || item.user?.email === 'willmandeno@gmail.com'" @change="toggleAdmin(item)" :label="item.is_admin_local ? 'Admin' : 'User'" hide-details dense />
+                    </template>
 
-                  <template #item.actions="{ item }">
-                    <v-btn color="error" variant="tonal" small :disabled="item.id === auth.user?.id || item.user?.email === 'willmandeno@gmail.com'" @click="confirmDelete(item)">Delete</v-btn>
-                  </template>
-                </v-data-table>
+                    <template #item.actions="{ item }">
+                      <v-btn color="error" variant="tonal" small :disabled="item.id === auth.user?.id || item.user?.email === 'willmandeno@gmail.com'" @click="confirmDelete(item)">Delete</v-btn>
+                    </template>
+                  </v-data-table>
               </div>
             </v-card-text>
           </v-card>
@@ -40,7 +51,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -49,6 +59,8 @@ import { useAuthStore } from '@/stores/auth'
 import { adminService } from '@/services/api'
 
 const auth = useAuthStore()
+const authReady = computed(() => auth.isHydrated)
+const isLoading = ref<boolean>(false)
 
 const isAdmin = computed(() => auth.user?.is_admin === true)
 
@@ -93,6 +105,14 @@ async function loadUsers() {
   }
 }
 
+onMounted(async () => {
+  if (isAdmin.value) {
+    isLoading.value = true
+    await loadUsers()
+    isLoading.value = false
+  }
+})
+
 function confirmDelete(u: any) {
   userToDelete.value = u
   showDeleteDialog.value = true
@@ -126,6 +146,19 @@ async function toggleAdmin(item: any) {
 watch(isAdmin, (v) => {
   if (v) void loadUsers()
 }, { immediate: true })
+
+watch(
+  () => auth.user,
+  async (user) => {
+    if (user?.is_admin) {
+      isLoading.value = true
+      await loadUsers()
+      isLoading.value = false
+    }
+  },
+  { immediate: true }
+)
+
 </script>
 
 <style scoped>

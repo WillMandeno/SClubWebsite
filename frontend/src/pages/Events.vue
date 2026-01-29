@@ -10,7 +10,16 @@
           variant="tonal"
         />
       </v-card-title>
-      <v-card-text>
+      <div v-if="isLoading">
+        <v-container>
+          <v-row justify="center">
+            <v-col cols="12" class="text-center">
+              <v-progress-circular indeterminate color="primary" size="64" />
+            </v-col>
+          </v-row>
+        </v-container>
+      </div>
+      <v-card-text v-else>
         <v-list>
           <v-list-item v-for="event in events" :key="event.id" class="event-row position-relative" @click="openViewDialog(event)">
             <v-row class="w-100 align-center" no-gutters>
@@ -99,7 +108,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useEventsStore } from '@/stores/events'
@@ -118,6 +127,7 @@ const showViewDialog = ref(false)
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
 const eventToDelete = ref<Event | null>(null)
+const isLoading = ref<boolean>(false)
 
 async function approveEvent(ev: Event) {
   try {
@@ -228,8 +238,10 @@ async function fetchEvents() {
   }
 }
 
-onMounted(() => {
-  fetchEvents()
+onMounted(async () => {
+  isLoading.value = true
+  await fetchEvents()
+  isLoading.value = false
 })
 </script>
 
