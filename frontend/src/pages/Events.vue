@@ -69,7 +69,7 @@
         <v-card-actions>
           <v-spacer />
           <v-btn text @click="cancelDelete">Cancel</v-btn>
-          <v-btn color="error" @click="confirmDelete">Delete</v-btn>
+          <v-btn :loading="eventsStoreLoading" color="error" @click="confirmDelete">Delete</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -100,7 +100,7 @@
               </v-btn>
             </div>
             <v-dialog v-model="showApproveDialog" max-width="500px">
-              <v-card :loading="eventsStoreLoading">
+              <v-card>
                 <v-card-title>Approve event</v-card-title>
                 <v-card-text>
                   Are you sure you want to approve
@@ -110,7 +110,7 @@
                 <v-card-actions>
                   <v-spacer />
                   <v-btn @click="showApproveDialog = false">Cancel</v-btn>
-                  <v-btn color="primary" @click="approveEvent">
+                  <v-btn :loading="eventsStoreLoading" color="primary" @click="approveEvent">
                     Approve
                   </v-btn>
                 </v-card-actions>
