@@ -81,13 +81,16 @@ export const useAuthStore = defineStore('auth', () => {
 	}
 
 	async function init() {
-		const t = localStorage.getItem('token')
-		if (t) {
-			token.value = t
-			// maybe don't await here; allow app to continue mounting
-			await fetchMe()
+		try {
+			const t = localStorage.getItem('token')
+			if (t) {
+				token.value = t
+				await fetchMe()
+			}
+		} finally {
+			isHydrated.value = true
 		}
-		isHydrated.value = true
+		
 	}
 
 	return {

@@ -5,6 +5,8 @@ import Register from './pages/Register.vue'
 import CreateEvent from './pages/CreateEvent.vue'
 import Events from './pages/Events.vue'
 import Users from './pages/Users.vue'
+import { useAuthStore } from './stores/auth'
+import { watch } from 'vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -45,13 +47,39 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
-  
-  if (to.meta.requiresAuth && !token) {
-    next('/login')
-  } else {
-    next()
+  const auth = useAuthStore()
+
+  // 1. Wait for auth hydration
+  if (!auth.isHydrated) {
+    const stop = watch(
+      () => auth.isHydrated,
+      () => {
+        stop()
+        next(to)
+      }
+    )
+    return
   }
+
+  // 2. Auth required
+  if (to.meta.requiresAuth && !auth.token) {
+    next({ path: '/login', replace: true })
+    return
+  }
+
+  // 3. Admin required
+  if (to.meta.requiresAdmin && !auth.user?.is_admin) {
+    next({ path: '/', replace: true })
+    return
+  }
+
+  // 4. Prevent logged-in users from accessing login/register
+  if ((to.name === 'Login' || to.name === 'Register') && auth.token) {
+    next({ path: '/', replace: true })
+    return
+  }
+
+  next()
 })
 
 export default router
