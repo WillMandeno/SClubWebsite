@@ -10,7 +10,7 @@
           variant="tonal"
         />
       </v-card-title>
-      <div v-if="isLoading">
+      <div v-if="eventsStoreLoading">
         <v-container>
           <v-row justify="center">
             <v-col cols="12" class="text-center">
@@ -89,7 +89,7 @@
               </v-col>
             </v-row>
             <div class="event-action">
-              <v-btn v-if="auth.user && auth.user.is_admin" icon size="small" @click.stop="approveEvent(event)" title="Approve">
+              <v-btn v-if="auth.user && auth.user.is_admin" icon size="small" @click.stop="eventToApprove = event; showApproveDialog = true" title="Approve">
                 <v-icon>mdi-check</v-icon>
               </v-btn>
               <v-btn v-if="auth.user && (auth.user.id === event.created_by || auth.user.is_admin)" icon size="small" @click.stop="openEditDialog(event)" title="Edit">
@@ -99,6 +99,23 @@
                 <v-icon>mdi-delete</v-icon>
               </v-btn>
             </div>
+            <v-dialog v-model="showApproveDialog" max-width="500px">
+              <v-card :loading="eventsStoreLoading">
+                <v-card-title>Approve event</v-card-title>
+                <v-card-text>
+                  Are you sure you want to approve
+                  <strong>{{ eventToApprove?.title }}</strong>?
+                  This action cannot be undone.
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer />
+                  <v-btn @click="showApproveDialog = false">Cancel</v-btn>
+                  <v-btn color="primary" @click="approveEvent">
+                    Approve
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
           </v-list-item>
         </v-list>
         <div v-if="!pendingEvents.length">No pending events.</div>
@@ -112,30 +129,37 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useEventsStore } from '@/stores/events'
-import { eventService } from '@/services/api'
 import EventDialog from '@/components/EventDialog.vue'
 import EventForm from '@/components/EventForm.vue'
 import { Event } from '@/types'
+import { storeToRefs } from 'pinia'
 
 const events = ref<Event[]>([])
 const pendingEvents = ref<Event[]>([])
 const router = useRouter()
 const auth = useAuthStore()
 const eventsStore = useEventsStore()
+const { loading: eventsStoreLoading } = storeToRefs(eventsStore)
 const selectedEvent = ref<Event | null>(null)
 const showViewDialog = ref(false)
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
 const eventToDelete = ref<Event | null>(null)
-const isLoading = ref<boolean>(false)
+const showApproveDialog = ref(false)
+const eventToApprove = ref<Event | null>(null)
 
-async function approveEvent(ev: Event) {
+async function approveEvent() {
+  const ev = eventToApprove.value
+  if (!ev) return
   try {
-    await eventService.updateEvent(ev.id, { ...ev, pending: false } as any)
+    await eventsStore.updateEvent(ev.id, { ...ev, pending: false } as any)
     await fetchEvents()
   } catch (e) {
     console.error('Failed to approve event', e)
     alert('Failed to approve event. Please try again.')
+  } finally {
+    showApproveDialog.value = false
+    eventToApprove.value = null
   }
 }
 
@@ -194,7 +218,7 @@ async function confirmDelete() {
   const ev = eventToDelete.value
   if (!ev) return
   try {
-    await eventService.deleteEvent(ev.id)
+    await eventsStore.deleteEvent(ev.id)
     events.value = events.value.filter(e => e.id !== ev.id)
     pendingEvents.value = pendingEvents.value.filter(e => e.id !== ev.id)
     showDeleteDialog.value = false
@@ -213,7 +237,7 @@ function goToCreate() {
 async function handleSave(data: { title: string; description: string; start_time: string; end_time: string; location: string | null }) {
   if (!selectedEvent.value) return
   try {
-    await eventService.updateEvent(selectedEvent.value.id, data)
+    await eventsStore.updateEvent(selectedEvent.value.id, data)
     await fetchEvents()
     showEditDialog.value = false
   } catch (e) {
@@ -239,9 +263,7 @@ async function fetchEvents() {
 }
 
 onMounted(async () => {
-  isLoading.value = true
   await fetchEvents()
-  isLoading.value = false
 })
 </script>
 

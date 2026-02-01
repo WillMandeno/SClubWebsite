@@ -67,6 +67,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { Event } from '@/types'
+import { useEventsStore } from '@/stores/events'
+import { storeToRefs } from 'pinia'
 
 interface Props {
   mode: 'create' | 'edit'
@@ -84,6 +86,8 @@ const emit = defineEmits<{
 
 const form = ref()
 
+const eventsStore = useEventsStore()
+const { loading } = storeToRefs(eventsStore)
 const title = ref('')
 const description = ref('')
 const startDate = ref('')
