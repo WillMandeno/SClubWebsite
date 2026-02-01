@@ -29,7 +29,6 @@ export const useEventsStore = defineStore('events', () => {
     try {
       const auth = useAuthStore()
       const payloadWithPending = { ...payload, pending: auth.user?.is_admin ? false : true }
-      console.log('Creating event with payload:', payloadWithPending)
       const res = await eventService.createEvent(payloadWithPending)
       await fetchEvents()
       return res
@@ -40,16 +39,28 @@ export const useEventsStore = defineStore('events', () => {
   }
 
   async function updateEvent(id: number | string, payload: any) {
-    const res = await eventService.updateEvent(Number(id), payload)
-    await fetchEvents()
-    return res
+    loading.value = true
+    try {
+      const auth = useAuthStore()
+      const payloadWithPending = { ...payload, pending: auth.user?.is_admin ? false : true }
+      const res = await eventService.updateEvent(Number(id), payloadWithPending)
+      await fetchEvents()
+      return res
+    } finally {
+        loading.value = false
+    }
   }
 
   async function deleteEvent(id: number | string) {
+  loading.value = true
+  try {
     const res = await eventService.deleteEvent(Number(id))
     await fetchEvents()
     return res
+  } finally {
+    loading.value = false
   }
+}
 
   return {
     events,
