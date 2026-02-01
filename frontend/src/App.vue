@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app v-if="auth.isHydrated">
     <v-app-bar color="primary" dark>
       <v-app-bar-nav-icon @click="drawer = !drawer" />
 
@@ -34,8 +34,6 @@
             <v-list-item-title>Events</v-list-item-title>
           </v-list-item>
 
-          
-
           <v-list-item link @click="goToCreate" class="d-flex align-center">
             <v-list-item-title>Create Event</v-list-item-title>
           </v-list-item>
@@ -60,6 +58,17 @@
       </v-container>
     </v-main>
   </v-app>
+  <v-app v-else>
+    <div class="loading-screen">
+      <div class="logo-frame">
+        <img
+          :src="EagleLogoGreenBackground"
+          alt="SClub Logo"
+          class="logo"
+        />
+      </div>
+    </div>
+  </v-app>
 </template>
 
 <script setup lang="ts">
@@ -77,7 +86,7 @@ onMounted(() => {
   auth.init()
 })
 
-const isAuthenticated = computed(() => !!auth.token)
+const isAuthenticated = computed(() => auth.isHydrated && !!auth.token)
 const userDisplayName = computed(() => auth.user?.display_name ?? auth.user?.email ?? '')
 const isAdmin = computed(() => !!auth.user?.is_admin)
 
@@ -120,6 +129,7 @@ function goToCreate() {
   position: relative;
 }
 
+/* REMOVE??? */
 .centered-title {
   position: absolute;
   top: 50%;
@@ -134,12 +144,36 @@ function goToCreate() {
 .centered-title > * {
   pointer-events: auto; /* restore clickability for children */
 }
-.user-display-name {
-  text-transform: none;
-}
+/*  */
+
 .v-toolbar-title, .v-card-title, .text-h5 {
   font-family: 'Permanent Marker', 'Rubik', Inter, Roboto, sans-serif;
   text-transform: none !important;
   letter-spacing: 0;
 }
+
+.loading-screen {
+  height: 100vh;
+  width: 100vw;
+  background-color: rgb(var(--v-theme-primary));;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-frame {
+  width: 120px;
+  height: 120px;
+  border: 4px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+
 </style>
