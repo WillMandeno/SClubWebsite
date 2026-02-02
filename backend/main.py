@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import sys
@@ -50,6 +50,10 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.head("/health")
+async def health_check_head():
+    return Response(status_code=200)
 
 
 app.include_router(auth_router)
