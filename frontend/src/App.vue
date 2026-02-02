@@ -1,5 +1,5 @@
 <template>
-  <v-app v-if="auth.isHydrated">
+  <v-app v-if="!appMounting">
     <v-app-bar color="primary" dark>
       <v-app-bar-nav-icon @click="drawer = !drawer" />
 
@@ -79,11 +79,13 @@ import EagleLogoGreenBackground from '@/assets/EagleLogoGreenBackground.png'
 
 const router = useRouter()
 const auth = useAuthStore()
+const appMounting = ref(true)
 
 const drawer = ref(false)
 
 onMounted(() => {
   auth.init()
+  appMounting.value = false
 })
 
 const isAuthenticated = computed(() => auth.isHydrated && !!auth.token)
