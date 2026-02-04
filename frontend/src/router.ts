@@ -30,7 +30,7 @@ const router = createRouter({
       path: '/create-event',
       name: 'CreateEvent',
       component: CreateEvent,
-      meta: { requiresAuth: true, requiresAdmin: true },
+      meta: { requiresAuth: true },
     },
     {
       path: '/admin/users',
