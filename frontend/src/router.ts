@@ -5,6 +5,7 @@ import Register from './pages/Register.vue'
 import CreateEvent from './pages/CreateEvent.vue'
 import Events from './pages/Events.vue'
 import Users from './pages/Users.vue'
+import Profile from './pages/Profile.vue'
 import { useAuthStore } from './stores/auth'
 import { watch } from 'vue'
 
@@ -42,7 +43,13 @@ const router = createRouter({
       path: '/events',
       name: 'Events',
       component: Events,
-    }
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: Profile,
+      meta: { requiresAuth: true },
+    },
   ],
 })
 

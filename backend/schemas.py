@@ -24,6 +24,13 @@ class User(UserBase):
     @field_validator('created_at', mode='before')
     def _created_at_default(cls, v):
         return ensure_utc(v)
+    
+class UserUpdate(BaseModel):
+    display_name: Optional[str] = Field(None, alias="displayName")
+    email: Optional[EmailStr] = None
+
+    class Config:
+        populate_by_name = True
 
 class EventBase(BaseModel):
     title: str
