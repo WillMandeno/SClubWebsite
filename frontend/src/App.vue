@@ -28,17 +28,25 @@
             <v-list-item-title :class="{ 'active-item': isActive('/') }">Home</v-list-item-title>
           </v-list-item>
 
+          <v-list-item link @click="goTo('/profile')" v-if="isAuthenticated">
+            <v-list-item-title :class="{ 'active-item': isActive('/profile') }">Profile</v-list-item-title>
+          </v-list-item>
+
+          <v-list-item link @click="goTo('/admin/users')" v-if="isAdmin" class="d-flex align-center">
+            <v-list-item-title :class="{ 'active-item': isActive('/admin/users') }">Users</v-list-item-title>
+          </v-list-item>
+
+          <v-divider />
+
           <v-list-item link @click="goTo('/events')">
-            <v-list-item-title :class="{ 'active-item': isActive('/events') }">Events</v-list-item-title>
+            <v-list-item-title :class="{ 'active-item': isActive('/events') }">View Events</v-list-item-title>
           </v-list-item>
 
           <v-list-item link @click="goToCreate" class="d-flex align-center">
             <v-list-item-title :class="{ 'active-item': isActive('/create-event') }">Create Event</v-list-item-title>
           </v-list-item>
 
-          <v-list-item link @click="goTo('/admin/users')" v-if="isAdmin" class="d-flex align-center">
-            <v-list-item-title :class="{ 'active-item': isActive('/admin/users') }">Users</v-list-item-title>
-          </v-list-item>
+          <v-divider />
 
           <v-list-item link v-if="isAuthenticated" @click="logoutAndClose" class="d-flex align-center">
             <v-list-item-title>Logout</v-list-item-title>
