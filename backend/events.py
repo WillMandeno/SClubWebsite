@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from .database import SessionLocal
 from .models import Event, User
-from .schemas import EventCreate, Event as EventSchema, EventWithCreator
+from .schemas import EventCreate, Event as EventSchema, EventUpdate, EventWithCreator
 from .auth import get_current_user
 from .utils import ensure_utc, utcnow
 from datetime import datetime
@@ -65,18 +65,15 @@ def create_event(event: EventCreate, current_user=Depends(get_current_user), db:
 
 
 @router.put("/{event_id}", response_model=EventSchema)
-def update_event(event_id: int, payload: EventCreate, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+def update_event(event_id: int, payload: EventUpdate, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     ev = db.query(Event).filter(Event.id == event_id).first()
     if not ev:
         raise HTTPException(status_code=404, detail="Event not found")
     if ev.created_by != current_user.id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not allowed")
-    ev.title = payload.title
-    ev.description = payload.description
-    ev.start_time = payload.start_time
-    ev.end_time = payload.end_time
-    ev.location = payload.location
-    ev.pending = payload.pending
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(ev, key, value)
     ev.updated_at = utcnow()
     db.commit()
     db.refresh(ev)
