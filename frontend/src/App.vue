@@ -15,41 +15,48 @@
       <v-navigation-drawer v-model="drawer" app temporary>
         <v-list>
           <v-list-item two-line v-if="isAuthenticated">
-            <v-list-item-content>
               <div class="d-flex align-center">
                 <v-icon class="mr-2">mdi-account-circle</v-icon>
                 <v-list-item-title class="user-display-name">{{ userDisplayName }}</v-list-item-title>
                 <v-list-item-subtitle class="ml-1" v-if="isAdmin">(Admin)</v-list-item-subtitle>
               </div>
-            </v-list-item-content>
           </v-list-item>
 
           <v-divider v-if="isAuthenticated"/>
 
-          <v-list-item link @click="goTo('/')" class="d-flex align-center">
-            <v-list-item-title><b>Home</b></v-list-item-title>
+          <v-list-item link @click="goTo('/')">
+            <v-list-item-title :class="{ 'active-item': isActive('/') }">Home</v-list-item-title>
           </v-list-item>
 
-          <v-list-item link @click="goTo('/events')" class="d-flex align-center">
-            <v-list-item-title>Events</v-list-item-title>
-          </v-list-item>
-
-          <v-list-item link @click="goToCreate" class="d-flex align-center">
-            <v-list-item-title>Create Event</v-list-item-title>
+          <v-list-item link @click="goTo('/profile')" v-if="isAuthenticated">
+            <v-list-item-title :class="{ 'active-item': isActive('/profile') }">Profile</v-list-item-title>
           </v-list-item>
 
           <v-list-item link @click="goTo('/admin/users')" v-if="isAdmin" class="d-flex align-center">
-            <v-list-item-title>Users</v-list-item-title>
+            <v-list-item-title :class="{ 'active-item': isActive('/admin/users') }">Users</v-list-item-title>
           </v-list-item>
 
+          <v-divider />
+
+          <v-list-item link @click="goTo('/events')">
+            <v-list-item-title :class="{ 'active-item': isActive('/events') }">View Events</v-list-item-title>
+          </v-list-item>
+
+          <v-list-item link @click="goToCreate" class="d-flex align-center">
+            <v-list-item-title :class="{ 'active-item': isActive('/create-event') }">Create Event</v-list-item-title>
+          </v-list-item>
+
+          <v-divider />
+
           <v-list-item link v-if="isAuthenticated" @click="logoutAndClose" class="d-flex align-center">
-            <v-list-item-title><b>Logout</b></v-list-item-title>
+            <v-list-item-title>Logout</v-list-item-title>
           </v-list-item>
 
           <v-list-item link v-if="!isAuthenticated" @click="goTo('/login')" class="d-flex align-center">
-            <v-list-item-title><b>Login</b></v-list-item-title>
+            <v-list-item-title :class="{ 'active-item': isActive('/login') }" >Login</v-list-item-title>
           </v-list-item>
         </v-list>
+
       </v-navigation-drawer>
 
     <v-main>
@@ -73,11 +80,12 @@
 
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import EagleLogoGreenBackground from '@/assets/EagleLogoGreenBackground.png'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 const appMounting = ref(true)
 
@@ -100,6 +108,11 @@ const logout = () => {
 function goTo(path: string) {
   drawer.value = false
   router.push(path)
+}
+
+function isActive(path: string) {
+  console.log('Checking active for path:', path, 'current route:', route.path)
+  return route.path === path
 }
 
 function logoutAndClose() {
@@ -176,6 +189,10 @@ function goToCreate() {
   width: 80%;
   height: 80%;
   object-fit: contain;
+}
+
+.active-item {
+  font-weight: bold !important;
 }
 
 </style>

@@ -42,6 +42,8 @@ export const authService = {
   register: (email: string, displayName: string, password: string) =>
     api.post('/auth/register', { email, displayName, password }),
   getMe: () => api.get('/auth/me'),
+  updateMe: (data: { displayName?: string; email?: string }) =>
+    api.patch('/auth/me', data),
 }
 
 export const adminService = {

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -10,7 +10,7 @@ import os
 
 from .database import SessionLocal
 from .models import User
-from .schemas import UserCreate, User as UserSchema
+from .schemas import UserCreate, User as UserSchema, UserUpdate
 
 from sqlalchemy.orm import Session
 
@@ -126,5 +126,29 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 @router.get("/me", response_model=UserSchema)
 def read_me(current_user: User = Depends(get_current_user)):
+    user_schema = UserSchema.model_validate(current_user)
+    return user_schema.model_dump(by_alias=True)
+
+@router.patch("/me", response_model=UserSchema)
+def update_me(
+    update: UserUpdate = Body(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Update fields only if provided
+    if update.display_name is not None:
+        current_user.display_name = update.display_name
+    if update.email is not None and update.email != current_user.email:
+        # check uniqueness of email
+        existing = db.query(User).filter(User.email == update.email, User.id != current_user.id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        current_user.email = update.email
+
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+
+    # Return schema with aliases
     user_schema = UserSchema.model_validate(current_user)
     return user_schema.model_dump(by_alias=True)

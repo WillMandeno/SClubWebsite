@@ -75,6 +75,18 @@ export const useAuthStore = defineStore('auth', () => {
 		}
 	}
 
+	async function updateProfile(data: { displayName?: string; email?: string }) {
+		if (!token.value) throw new Error('Not authenticated')
+		loading.value = true
+		try {
+			const res = await authService.updateMe(data)
+			user.value = normalizeUser(res.data)
+			return res
+		} finally {
+			loading.value = false
+		}
+	}
+
 	function logout() {
 		setToken(null)
 		user.value = null
@@ -102,6 +114,7 @@ export const useAuthStore = defineStore('auth', () => {
 		fetchMe,
 		login,
 		register,
+		updateProfile,
 		logout,
 		init,
 	}

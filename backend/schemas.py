@@ -24,6 +24,13 @@ class User(UserBase):
     @field_validator('created_at', mode='before')
     def _created_at_default(cls, v):
         return ensure_utc(v)
+    
+class UserUpdate(BaseModel):
+    display_name: Optional[str] = Field(None, alias="displayName")
+    email: Optional[EmailStr] = None
+
+    class Config:
+        populate_by_name = True
 
 class EventBase(BaseModel):
     title: str
@@ -38,7 +45,21 @@ class EventBase(BaseModel):
         return ensure_utc(v)
 
 class EventCreate(EventBase):
-    pass
+    pending: bool = True
+
+class EventUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    location: Optional[str] = None
+    pending: Optional[bool] = None
+
+    @field_validator('start_time', 'end_time', mode='before')
+    def _ensure_start_end_utc(cls, v):
+        if v is None:
+            return v
+        return ensure_utc(v)
 
 class Event(EventBase):
     id: int
@@ -56,7 +77,6 @@ class Event(EventBase):
 
 class EventWithCreator(Event):
     creator: User
-
 
 class AdminUpdate(BaseModel):
     is_admin: bool
