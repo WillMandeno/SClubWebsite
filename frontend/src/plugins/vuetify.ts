@@ -30,6 +30,9 @@ export default createVuetify({
     VToolbarTitle: {
       style: 'font-family: \"Bungee\", Rubik, Inter, sans-serif; text-transform: none; letter-spacing: 0;',
     },
+    VExpansionPanelTitle: {
+      style: 'font-family: \"Bungee\", Rubik, Inter, sans-serif; text-transform: none; letter-spacing: 0;',
+    },
     VCardTitle: {
       style: 'font-family: \"Bungee\", Rubik, Inter, sans-serif; text-transform: none; letter-spacing: 0;',
     },

@@ -6,7 +6,6 @@ import { useAuthStore } from './auth'
 
 export const useEventsStore = defineStore('events', () => {
   const events = ref<Event[]>([])
-  const pendingEvents = ref<Event[]>([])
   const loading = ref(false)
 
   async function fetchEvents() {
@@ -16,9 +15,7 @@ export const useEventsStore = defineStore('events', () => {
       const data = Array.isArray(res.data) ? res.data : []
       // Store the full event set; components should filter as needed.
       events.value = data
-      // keep pendingEvents for compatibility, but it's derived from full set
-      pendingEvents.value = data.filter((event: Event) => event.pending)
-      return events.value, pendingEvents.value
+      return events.value
     } finally {
       loading.value = false
     }
@@ -41,9 +38,7 @@ export const useEventsStore = defineStore('events', () => {
   async function updateEvent(id: number | string, payload: any) {
     loading.value = true
     try {
-      const auth = useAuthStore()
-      const payloadWithPending = { ...payload, pending: auth.user?.is_admin ? false : true }
-      const res = await eventService.updateEvent(Number(id), payloadWithPending)
+      const res = await eventService.updateEvent(Number(id), payload)
       await fetchEvents()
       return res
     } finally {
@@ -52,23 +47,34 @@ export const useEventsStore = defineStore('events', () => {
   }
 
   async function deleteEvent(id: number | string) {
-  loading.value = true
-  try {
-    const res = await eventService.deleteEvent(Number(id))
-    await fetchEvents()
-    return res
-  } finally {
-    loading.value = false
+    loading.value = true
+    try {
+      const res = await eventService.deleteEvent(Number(id))
+      await fetchEvents()
+      return res
+    } finally {
+      loading.value = false
+    }
   }
-}
+
+  async function approveEvent(id: number | string) {
+    loading.value = true
+    try {
+      const res = await eventService.updateEvent(Number(id), { pending: false })
+      await fetchEvents()
+      return res
+    } finally {
+      loading.value = false
+    }
+  }
 
   return {
     events,
-    pendingEvents,
     loading,
     fetchEvents,
     createEvent,
     updateEvent,
     deleteEvent,
+    approveEvent,
   }
 })

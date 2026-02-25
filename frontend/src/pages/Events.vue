@@ -1,4 +1,7 @@
 <template>
+
+  <!-- UPCOMING EVENTS SECTION -->
+
   <div class="events-section">
     <v-card class="pa-4">
       <v-card-title class="d-flex align-center justify-space-between">
@@ -21,7 +24,7 @@
       </div>
       <v-card-text v-else>
         <v-list>
-          <v-list-item v-for="event in events" :key="event.id" class="event-row position-relative" @click="openViewDialog(event)">
+          <v-list-item v-for="event in upcomingEvents" :key="event.id" class="event-row position-relative" @click="openViewDialog(event)">
             <v-row class="w-100 align-center" no-gutters>
               <v-col cols="12" class="pl-0 event-left">
                 <div class="event-title-text">{{ event.title }}</div>
@@ -38,7 +41,7 @@
             </div>
           </v-list-item>
         </v-list>
-        <div v-if="!events.length">No upcoming events.</div>
+        <div v-if="!upcomingEvents.length">No upcoming events.</div>
       </v-card-text>
     </v-card>
     
@@ -74,10 +77,50 @@
       </v-card>
     </v-dialog>
   </div>
+
+  <!-- PAST EVENTS SECTION -->
+
+  <div class="events-section">
+    <v-expansion-panels>
+      <v-expansion-panel>
+        <v-expansion-panel-title>
+          Past Events
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <v-card-text v-if="!pastEvents.length">No past events.</v-card-text>
+          <v-card-text v-else>
+            <v-list>
+              <v-list-item v-for="event in pastEvents" :key="event.id" class="event-row position-relative" @click="openViewDialog(event)">
+                <v-row class="w-100 align-center" no-gutters>
+                  <v-col cols="12" class="pl-0 event-left">
+                    <div class="event-title-text">{{ event.title }}</div>
+                    <div class="event-range">{{ formatRange(event.start_time, event.end_time) }}</div>
+                  </v-col>
+                </v-row>
+                <div class="event-action">
+                  <v-btn v-if="auth.user && (auth.user.id === event.created_by || auth.user.is_admin)" icon size="small" @click.stop="openEditDialog(event)" title="Edit">
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                  <v-btn v-if="auth.user && (auth.user.id === event.created_by || auth.user.is_admin)" icon size ="small" @click.stop="openDeleteDialog(event)" title="Delete">
+                    <v-icon>mdi-delete</v-icon>
+                  </v-btn>
+                </div>
+              </v-list-item>
+            </v-list>
+            <div v-if="!upcomingEvents.length">No upcoming events.</div>
+          </v-card-text>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
+  </div>
+
+  <!-- PENDING EVENTS SECTION -->
+
   <div class="events-section pending-section" v-if="auth.user?.is_admin || pendingEvents.length">
     <v-card class="pa-4 pending-card">
       <v-card-title class="d-flex align-center justify-space-between">
-        Pending Events
+        <div v-if="auth.user?.is_admin">Pending Events</div>
+        <div v-else>Your Pending Events</div>
       </v-card-title>
       <v-card-text>
         <v-list>
@@ -125,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useEventsStore } from '@/stores/events'
@@ -134,12 +177,10 @@ import EventForm from '@/components/EventForm.vue'
 import { Event } from '@/types'
 import { storeToRefs } from 'pinia'
 
-const events = ref<Event[]>([])
-const pendingEvents = ref<Event[]>([])
 const router = useRouter()
 const auth = useAuthStore()
 const eventsStore = useEventsStore()
-const { loading: eventsStoreLoading } = storeToRefs(eventsStore)
+const { loading: eventsStoreLoading, events } = storeToRefs(eventsStore)
 const selectedEvent = ref<Event | null>(null)
 const showViewDialog = ref(false)
 const showEditDialog = ref(false)
@@ -147,12 +188,37 @@ const showDeleteDialog = ref(false)
 const eventToDelete = ref<Event | null>(null)
 const showApproveDialog = ref(false)
 const eventToApprove = ref<Event | null>(null)
+const now = computed(() => new Date())
+
+const upcomingEvents = computed(() => {
+  const current = now.value
+  return events.value.filter(ev =>
+    !ev.pending && new Date(ev.end_time) >= current
+  )
+})
+
+const pastEvents = computed(() => {
+  const current = now.value
+  return events.value.filter(ev =>
+    !ev.pending && new Date(ev.end_time) < current
+  )
+})
+
+const pendingEvents = computed(() => {
+  if (!auth.user) return []
+  if (auth.user.is_admin) {
+    return events.value.filter(ev => ev.pending)
+  }
+  return events.value.filter(
+    ev => ev.pending && ev.created_by === auth.user?.id
+  )
+})
 
 async function approveEvent() {
   const ev = eventToApprove.value
   if (!ev) return
   try {
-    await eventsStore.updateEvent(ev.id, { ...ev, pending: false } as any)
+    await eventsStore.approveEvent(ev.id)
     await fetchEvents()
   } catch (e) {
     console.error('Failed to approve event', e)
@@ -249,14 +315,6 @@ async function handleSave(data: { title: string; description: string; start_time
 async function fetchEvents() {
   try {
     await eventsStore.fetchEvents()
-    // store exposes refs; copy into local reactive refs
-    // store.events now contains the full event set; filter locally
-    events.value = eventsStore.events.filter(ev => !ev.pending)
-    pendingEvents.value = eventsStore.events.filter(ev => {
-      if (!auth.user) return false
-      if (auth.user.is_admin) return ev.pending
-      return ev.pending && ev.created_by === auth.user.id
-    })
   } catch (e) {
     console.error('Failed to fetch events', e)
   }
