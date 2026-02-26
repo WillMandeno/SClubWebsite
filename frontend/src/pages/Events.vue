@@ -81,34 +81,39 @@
   <!-- PAST EVENTS SECTION -->
 
   <div class="events-section">
-    <v-expansion-panels>
-      <v-expansion-panel>
-        <v-expansion-panel-title>
+    <v-expansion-panels class="events-section">
+      <v-expansion-panel elevation="1">
+        <v-expansion-panel-title class="pa-6 text-h6">
           Past Events
         </v-expansion-panel-title>
-        <v-expansion-panel-text>
-          <v-card-text v-if="!pastEvents.length">No past events.</v-card-text>
-          <v-card-text v-else>
-            <v-list>
-              <v-list-item v-for="event in pastEvents" :key="event.id" class="event-row position-relative" @click="openViewDialog(event)">
-                <v-row class="w-100 align-center" no-gutters>
-                  <v-col cols="12" class="pl-0 event-left">
-                    <div class="event-title-text">{{ event.title }}</div>
-                    <div class="event-range">{{ formatRange(event.start_time, event.end_time) }}</div>
-                  </v-col>
-                </v-row>
-                <div class="event-action">
-                  <v-btn v-if="auth.user && (auth.user.id === event.created_by || auth.user.is_admin)" icon size="small" @click.stop="openEditDialog(event)" title="Edit">
-                    <v-icon>mdi-pencil</v-icon>
-                  </v-btn>
-                  <v-btn v-if="auth.user && (auth.user.id === event.created_by || auth.user.is_admin)" icon size ="small" @click.stop="openDeleteDialog(event)" title="Delete">
-                    <v-icon>mdi-delete</v-icon>
-                  </v-btn>
-                </div>
-              </v-list-item>
-            </v-list>
-            <div v-if="!upcomingEvents.length">No upcoming events.</div>
-          </v-card-text>
+
+        <v-expansion-panel-text class="pa-0">
+            <v-card-text>
+              <v-list>
+                <v-list-item v-for="event in pastEvents" :key="event.id" class="event-row position-relative" @click="openViewDialog(event)">
+                  <v-row class="w-100 align-center" no-gutters>
+                    <v-col cols="12" class="pl-0 event-left">
+                      <div class="event-title-text">{{ event.title }}</div>
+                      <div class="event-range">{{ formatRange(event.start_time, event.end_time) }}</div>
+                    </v-col>
+                  </v-row>
+                  <div class="event-action">
+                    <v-btn v-if="auth.user && (auth.user.id === event.created_by || auth.user.is_admin)" icon size="small" @click.stop="openEditDialog(event)" title="Edit">
+                      <v-icon>mdi-pencil</v-icon>
+                    </v-btn>
+                    <v-btn v-if="auth.user && (auth.user.id === event.created_by || auth.user.is_admin)" icon size ="small" @click.stop="openDeleteDialog(event)" title="Delete">
+                      <v-icon>mdi-delete</v-icon>
+                    </v-btn>
+                  </div>
+                </v-list-item>
+              </v-list>
+              <div v-if="!upcomingEvents.length">No upcoming events.</div>
+            </v-card-text>
+
+            <div v-if="!pastEvents.length">
+              No past events.
+            </div>
+
         </v-expansion-panel-text>
       </v-expansion-panel>
     </v-expansion-panels>
