@@ -9,7 +9,7 @@
 
     <v-textarea
       v-model="description"
-      label="Description"
+      label="Description (optional)"
       rows="4"
     />
 
